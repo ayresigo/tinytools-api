@@ -18,12 +18,6 @@ import { CookieGuard } from '../auth/cookie.guard';
 export class WebhookController {
   constructor(private readonly webhookService: WebhookService) {}
 
-  @Post()
-  @HttpCode(200)
-  async receiveWebhook(@Request() req, @Body() body: object) {
-    return this.webhookService.receiveWebhook(body, req.cookie, req.apiKey);
-  }
-
   @HttpCode(200)
   @Post('goldtech')
   async receiveGoldtechWebhook(@Body() body: object) {
@@ -31,13 +25,8 @@ export class WebhookController {
   }
 
   @HttpCode(200)
-  @Get('strt_rtn')
+  @Get('startRoutine')
   async start_routine(@Query('id') id: string) {
     return this.webhookService.testWebhook(id);
-  }
-
-  @Post('startRoutine')
-  async startRoutine(@Request() req, @Query('id') id: string) {
-    return await this.webhookService.startRoutine(id, req.cookie, req.apiKey);
   }
 }
