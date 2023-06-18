@@ -13,7 +13,7 @@ export class ApplicationService {
     try {
       const url = `${constants.PROVIDED_BASE_URL}${endpoint}`;
       const paramters = {
-        token: constants.API_TOKEN,
+        token: apiKey,
         formato: 'json',
         ...params,
       };
