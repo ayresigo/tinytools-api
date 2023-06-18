@@ -27,6 +27,28 @@ export class WebRepository {
     });
   }
 
+  async getBotIsActiveByName(name: string): Promise<object> {
+    return await this.userRepository.findOne({
+      select: {
+        botIsActive: true,
+      },
+      where: {
+        name: name,
+      },
+    });
+  }
+
+  async getBotIsActiveById(id: number): Promise<object> {
+    return await this.userRepository.findOne({
+      select: {
+        botIsActive: true,
+      },
+      where: {
+        id: id,
+      },
+    });
+  }
+
   async getUserKeysByName(name: string): Promise<object> {
     return await this.userRepository.findOne({
       select: {
@@ -48,10 +70,27 @@ export class WebRepository {
         name: true,
         email: true,
         role: true,
+        botIsActive: true,
       },
       where: {
         username: info.username,
         password: info.password,
+      },
+    });
+  }
+
+  async getUserById(id: number): Promise<User> {
+    return await this.userRepository.findOne({
+      select: {
+        id: true,
+        username: true,
+        name: true,
+        email: true,
+        role: true,
+        botIsActive: true,
+      },
+      where: {
+        id: id,
       },
     });
   }
@@ -82,6 +121,10 @@ export class WebRepository {
         id: id,
       },
     });
+  }
+
+  async saveUser(user: User) {
+    return await this.userRepository.save(user);
   }
 
   async saveProduct(product: Product) {

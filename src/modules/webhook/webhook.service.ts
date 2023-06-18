@@ -4,6 +4,7 @@ import { WebRepository } from '../web/web.repository';
 import { AddInvoiceDto } from '../application/models/addInvoice.dto';
 import { UserKeysDto } from './models/userKeys.dto';
 import { WebService } from '../web/web.service';
+import { isatty } from 'tty';
 
 @Injectable()
 export class WebhookService {
@@ -30,10 +31,14 @@ export class WebhookService {
       body['dados']['idNotaFiscal'] != '0'
     ) {
       const storeName = 'goldtech';
-      const userKeys = await this.webRepository.getUserKeysByName(storeName);
+      const isActive = await this.webRepository.getBotIsActiveByName(storeName);
+      if (isActive['botIsActive']) {
+        const userKeys = await this.webRepository.getUserKeysByName(storeName);
+        const keys = new UserKeysDto(userKeys);
+        return await this.startRoutine(body['dados']['idNotaFiscal'], keys);
+      }
 
-      const keys = new UserKeysDto(userKeys);
-      return await this.startRoutine(body['dados']['idNotaFiscal'], keys);
+      return { message: 'Tinytools is not active for ' + storeName };
     }
   }
 

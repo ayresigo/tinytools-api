@@ -10,6 +10,7 @@ import { SignInDto } from './models/dto/signIn.dto';
 import { User } from './models/entities/user.entity';
 import { Product } from './models/entities/product.entity';
 import { Utils } from 'src/utils/utils';
+import { BaseExceptionFilter } from '@nestjs/core';
 
 @Injectable()
 export class WebService {
@@ -35,6 +36,17 @@ export class WebService {
     }
   }
 
+  async updateBotIsActive(isActive: boolean, id: number): Promise<object> {
+    try {
+      var user = await this.webRepository.getUserById(id);
+      user.botIsActive = isActive;
+
+      return await this.webRepository.saveUser(user);
+    } catch (e) {
+      throw new BadRequestException(e.message);
+    }
+  }
+
   async getObfuscatedUserKeys(user: number): Promise<object> {
     try {
       let response = await this.getUserKeys(user);
@@ -55,6 +67,14 @@ export class WebService {
       });
 
       return result;
+    } catch (e) {
+      throw new BadRequestException(e.message);
+    }
+  }
+
+  async getIsActive(user: number): Promise<object> {
+    try {
+      return await this.webRepository.getBotIsActiveById(user);
     } catch (e) {
       throw new BadRequestException(e.message);
     }
