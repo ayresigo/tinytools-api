@@ -1,16 +1,12 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { ApplicationFacade } from '../application/application.facade';
-import { WebRepository, repository } from '../web/web.repository';
-import { isEqual } from 'lodash';
+import { WebRepository } from '../web/web.repository';
 import { AddInvoiceDto } from '../application/models/addInvoice.dto';
 import { UserKeysDto } from './models/userKeys.dto';
 import { WebService } from '../web/web.service';
 
 @Injectable()
 export class WebhookService {
-  private processedBodies: Set<object> = new Set();
-  private readonly maxProcessedBodiesSize: number = 1;
-
   constructor(
     @Inject(ApplicationFacade)
     private readonly applicationFacade: ApplicationFacade,

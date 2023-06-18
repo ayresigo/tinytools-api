@@ -1,17 +1,6 @@
-import {
-  Body,
-  Controller,
-  Get,
-  HttpCode,
-  Param,
-  Post,
-  Query,
-  Request,
-  UseGuards,
-} from '@nestjs/common';
+import { Body, Controller, Get, HttpCode, Post, Query } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 import { WebhookService } from './webhook.service';
-import { CookieGuard } from '../auth/cookie.guard';
 
 @ApiTags('Webhook')
 @Controller('webhook')
