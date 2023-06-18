@@ -4,7 +4,7 @@ import {
   NotFoundException,
   UnprocessableEntityException,
 } from '@nestjs/common';
-import { WebRepository, repository } from './web.repository';
+import { WebRepository } from './web.repository';
 import { ProductDto } from './models/dto/product.dto';
 import { SignInDto } from './models/dto/signIn.dto';
 import { User } from './models/entities/user.entity';
@@ -58,10 +58,6 @@ export class WebService {
     } catch (e) {
       throw new BadRequestException(e.message);
     }
-  }
-
-  async searchItem(search: string): Promise<object> {
-    return repository.backRepo.filter((obj) => obj.sku.includes(search));
   }
 
   async addItems(body: ProductDto[], user: number): Promise<object> {
