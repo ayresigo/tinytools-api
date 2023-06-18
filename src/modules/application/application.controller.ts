@@ -3,12 +3,13 @@ import {
   Post,
   Query,
   Get,
-  Header,
   Body,
   HttpCode,
   HttpStatus,
   UseGuards,
   Request,
+  Head,
+  Header,
 } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 import { ApplicationFacade } from './application.facade';

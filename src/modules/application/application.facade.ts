@@ -117,9 +117,7 @@ export class ApplicationFacade {
     invoice.valorAproximadoImpostosTotal =
       taxes['valorAproximadoImpostosTotal'];
     invoice.obsSistema = taxes['obsSistema'];
-
-    // console.log(JSON.stringify(invoice));
-
+    
     const response = await this.applicationService.sendBRequest(
       {
         func: constants.ADD_INVOICE_FUNC,
