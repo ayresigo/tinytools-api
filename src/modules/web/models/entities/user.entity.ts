@@ -25,4 +25,7 @@ export class User {
 
   @Column({ type: 'varchar' })
   cookie: string;
+
+  @Column({ type: 'boolean' })
+  botIsActive: boolean;
 }

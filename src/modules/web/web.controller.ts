@@ -28,6 +28,21 @@ export class WebController {
   }
 
   @UseGuards(AuthGuard)
+  @Put('editIsActive')
+  async updateIsActive(
+    @Request() req,
+    @Query('isActive') isActive: boolean,
+  ): Promise<object> {
+    return await this.webService.updateBotIsActive(isActive, req.user.id);
+  }
+
+  @UseGuards(AuthGuard)
+  @Get('getIsActive')
+  async getIsActive(@Request() req): Promise<object> {
+    return await this.webService.getIsActive(req.user.id);
+  }
+
+  @UseGuards(AuthGuard)
   @Get('getItems')
   async getItems(@Request() req): Promise<object> {
     return this.webService.getItems(req.user.id);
