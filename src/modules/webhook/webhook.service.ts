@@ -89,7 +89,7 @@ export class WebhookService {
           id,
         );
 
-        return await this.applicationFacade.addInvoice(
+        await this.applicationFacade.addInvoice(
           userKeys.cookie,
           id,
           new AddInvoiceDto(invoice),
