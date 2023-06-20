@@ -15,11 +15,22 @@ export class WebRepository {
     private readonly productsRepository: Repository<Product>,
   ) {}
 
-  async getUserKeysByUserId(id: number): Promise<object> {
+  async getTinyKeysByUserId(id: number): Promise<object> {
+    return await this.userRepository.findOne({
+      select: {
+        tinyLogin: true,
+        tinyPassword: true,
+      },
+      where: {
+        id: id,
+      },
+    });
+  }
+
+  async getApiKeyByUserId(id: number): Promise<object> {
     return await this.userRepository.findOne({
       select: {
         apiKey: true,
-        cookie: true,
       },
       where: {
         id: id,
@@ -49,12 +60,11 @@ export class WebRepository {
     });
   }
 
-  async getUserKeysByName(name: string): Promise<object> {
+  async getApiKeyAndIdByName(name: string): Promise<object> {
     return await this.userRepository.findOne({
       select: {
         id: true,
         apiKey: true,
-        cookie: true,
       },
       where: {
         name: name,

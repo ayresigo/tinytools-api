@@ -28,9 +28,9 @@ export class WebService {
     }
   }
 
-  async getUserKeys(user: number): Promise<object> {
+  async getApiKey(user: number): Promise<object> {
     try {
-      return await this.webRepository.getUserKeysByUserId(user);
+      return await this.webRepository.getApiKeyByUserId(user);
     } catch (e) {
       throw new BadRequestException(e.message);
     }
@@ -49,7 +49,7 @@ export class WebService {
 
   async getObfuscatedUserKeys(user: number): Promise<object> {
     try {
-      let response = await this.getUserKeys(user);
+      let response = await this.getApiKey(user);
       const obfuscatedApiKey = this.obfuscateString(response['apiKey']);
       const obfuscatedCookie = this.obfuscateString(response['cookie']);
       return { apiKey: obfuscatedApiKey, cookie: obfuscatedCookie };

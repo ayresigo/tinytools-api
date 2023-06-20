@@ -2,14 +2,19 @@ import {
   BadRequestException,
   Injectable,
   NotFoundException,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { ApplicationService } from './application.service';
 import { constants } from 'src/utils/constants';
 import { AddInvoiceDto } from './models/addInvoice.dto';
+import { WebRepository } from '../web/web.repository';
 
 @Injectable()
 export class ApplicationFacade {
-  constructor(private readonly applicationService: ApplicationService) {}
+  constructor(
+    private readonly applicationService: ApplicationService,
+    private readonly webRepository: WebRepository,
+  ) {}
 
   receiveApplication(data): string {
     return 'received';
@@ -45,6 +50,7 @@ export class ApplicationFacade {
         invoiceId: id,
       },
       cookie,
+      constants.SCRAPED_INVOICE_ENDPOINT,
     );
 
     const result = this.mapObject(response, constants.INVOICE_ITEM_PREFIX);
@@ -67,6 +73,7 @@ export class ApplicationFacade {
         itemId: itemId,
       },
       cookie,
+      constants.SCRAPED_INVOICE_ENDPOINT,
     );
 
     return this.mapObject(response, constants.TEMP_ITEM_PREFIX);
@@ -97,6 +104,7 @@ export class ApplicationFacade {
         tempItem: tempItem,
       },
       cookie,
+      constants.SCRAPED_INVOICE_ENDPOINT,
     );
 
     return this.mapObject(response, constants.SENT_TEMP_ITEM_PREFIX);
@@ -117,7 +125,7 @@ export class ApplicationFacade {
     invoice.valorAproximadoImpostosTotal =
       taxes['valorAproximadoImpostosTotal'];
     invoice.obsSistema = taxes['obsSistema'];
-    
+
     const response = await this.applicationService.sendBRequest(
       {
         func: constants.ADD_INVOICE_FUNC,
@@ -125,6 +133,7 @@ export class ApplicationFacade {
         invoice: invoice,
       },
       cookie,
+      constants.SCRAPED_INVOICE_ENDPOINT,
     );
 
     return this.mapObject(response, constants.ADD_INVOICE_FUNC);
@@ -144,6 +153,45 @@ export class ApplicationFacade {
     return response.data;
   }
 
+  async getTinyCookie(id: number): Promise<object> {
+    const keys = await this.webRepository.getTinyKeysByUserId(id);
+    const cookie = 'asd';
+
+    if (!keys)
+      throw new UnauthorizedException(
+        'O nome de usuário e a senha não correspondem',
+      );
+
+    const eLogin = await this.applicationService.sendBRequest(
+      {
+        metd: constants.E_LOGIN_FUNC_METD,
+        login: keys['tinyLogin'],
+        password: keys['tinyPassword'],
+      },
+      cookie,
+      constants.SCRAPED_LOGIN_ENDPOINT,
+    );
+
+    let eResponse = this.mapObject(eLogin, null);
+
+    if ('error' in eResponse)
+      throw new UnauthorizedException(
+        'O nome de usuário e a senha não correspondem',
+      );
+
+    const fLogin = await this.applicationService.sendBRequest(
+      {
+        metd: constants.F_LOGIN_FUNC_METD,
+        uidLogin: eResponse['response']['uidLogin'],
+        idUsuario: eResponse['response']['idUsuario'],
+      },
+      cookie,
+      constants.SCRAPED_LOGIN_ENDPOINT,
+    );
+
+    return fLogin;
+  }
+
   async calcTax(
     cookie: string,
     id: string,
@@ -156,6 +204,7 @@ export class ApplicationFacade {
         tempInvoiceId: tempInvoiceId,
       },
       cookie,
+      constants.SCRAPED_INVOICE_ENDPOINT,
     );
 
     return this.mapObject(response, null);
@@ -199,7 +248,8 @@ export class ApplicationFacade {
           let parsedObj = JSON.parse(unescape(parsedSrc[parsedSrc.length - 1]));
           result = parsedObj;
         }
-      }
+      } else if (element['cmd'] == 'rt') result['response'] = element['val'];
+      else if (element['cmd'] == 'rj') result['error'] = element['exc'];
     });
 
     return result;

@@ -30,6 +30,15 @@ export class ApplicationController {
     return await this.applicationFacade.searchProduct(req.apiKey, search);
   }
 
+  // @UseGuards(CookieGuard)
+  @Get('getCookie')
+  async GetTinyCookie(
+    @Request() req,
+    @Query('id') id: number,
+  ): Promise<object> {
+    return await this.applicationFacade.getTinyCookie(id);
+  }
+
   @UseGuards(CookieGuard)
   @Get('invoice')
   async SearchInvoice(
