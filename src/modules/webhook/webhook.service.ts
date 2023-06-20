@@ -17,7 +17,7 @@ export class WebhookService {
 
   async testWebhook(id: string) {
     const storeName = 'goldtech';
-    const userKeys = await this.webRepository.getUserKeysByName(storeName);
+    const userKeys = await this.webRepository.getApiKeyAndIdByName(storeName);
 
     const keys = new UserKeysDto(userKeys);
     return await this.startRoutine(id, keys);
@@ -33,7 +33,9 @@ export class WebhookService {
       const storeName = 'goldtech';
       const isActive = await this.webRepository.getBotIsActiveByName(storeName);
       if (isActive['botIsActive']) {
-        const userKeys = await this.webRepository.getUserKeysByName(storeName);
+        const userKeys = await this.webRepository.getApiKeyAndIdByName(
+          storeName,
+        );
         const keys = new UserKeysDto(userKeys);
         return await this.startRoutine(body['dados']['idNotaFiscal'], keys);
       }
@@ -45,9 +47,12 @@ export class WebhookService {
   async startRoutine(id: string, userKeys: UserKeysDto): Promise<object> {
     try {
       const priceReferences = await this.webService.getItems(userKeys.userId);
+      const cookie = await this.applicationFacade.getTinyCookie(
+        userKeys.userId,
+      );
 
       let invoice = await this.applicationFacade.searchInvoice(
-        userKeys.cookie,
+        cookie['cookie'],
         id,
       );
 
@@ -60,13 +65,13 @@ export class WebhookService {
 
         if (reference && item.valorUnitario !== reference.price) {
           const tempItem = await this.applicationFacade.getTempItem(
-            userKeys.cookie,
+            cookie['cookie'],
             id,
             item.id,
           );
 
           await this.applicationFacade.addTempItem(
-            userKeys.cookie,
+            cookie['cookie'],
             id,
             item.id,
             invoice['idNotaTmp'],
@@ -80,18 +85,18 @@ export class WebhookService {
 
       if (changedInvoice) {
         await this.applicationFacade.addInvoice(
-          userKeys.cookie,
+          cookie['cookie'],
           id,
           new AddInvoiceDto(invoice),
         );
 
         invoice = await this.applicationFacade.searchInvoice(
-          userKeys.cookie,
+          cookie['cookie'],
           id,
         );
 
         await this.applicationFacade.addInvoice(
-          userKeys.cookie,
+          cookie['cookie'],
           id,
           new AddInvoiceDto(invoice),
         );

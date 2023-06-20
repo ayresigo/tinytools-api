@@ -23,9 +23,12 @@ export class User {
   @Column({ type: 'varchar' })
   apiKey: string;
 
-  @Column({ type: 'varchar' })
-  cookie: string;
-
   @Column({ type: 'boolean' })
   botIsActive: boolean;
+
+  @Column({ type: 'varchar' })
+  tinyLogin: boolean;
+
+  @Column({ type: 'varchar' })
+  tinyPassword: boolean;
 }
