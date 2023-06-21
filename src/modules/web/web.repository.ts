@@ -72,6 +72,22 @@ export class WebRepository {
     });
   }
 
+  async updateApiKeyByUserId(id: number, apiKey: string): Promise<object> {
+    return await this.userRepository.save({ id: id, apiKey: apiKey });
+  }
+
+  async updateTinyAccountByUserId(
+    id: number,
+    username: string,
+    password: string,
+  ): Promise<object> {
+    return await this.userRepository.save({
+      id: id,
+      tinyLogin: username,
+      tinyPassword: password,
+    });
+  }
+
   async getUserByUserAndPassword(info: SignInDto): Promise<User> {
     return await this.userRepository.findOneOrFail({
       select: {
