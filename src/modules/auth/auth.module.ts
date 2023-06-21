@@ -5,21 +5,25 @@ import { JwtModule } from '@nestjs/jwt';
 import { AuthController } from './auth.controller';
 import { WebModule } from '../web/web.module';
 import { jwtConstants } from './constants';
-import { SharedModule } from '../application/shared.module';
-import { EntitiesModule } from '../web/typeorm.module';
+import { WebRepository } from '../web/web.repository';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { User } from '../web/models/entities/user.entity';
+import { Product } from '../web/models/entities/product.entity';
+import { WebService } from '../web/web.service';
+import { Utils } from 'src/utils/utils';
 
 @Module({
   imports: [
     WebModule,
-    SharedModule,
-    EntitiesModule,
+    TypeOrmModule.forFeature([User]),
+    TypeOrmModule.forFeature([Product]),
     JwtModule.register({
       global: true,
       secret: jwtConstants.secret,
       signOptions: { expiresIn: jwtConstants.expiration },
     }),
   ],
-  providers: [AuthService],
+  providers: [AuthService, WebService, WebRepository, Utils],
   controllers: [AuthController],
   exports: [AuthService],
 })

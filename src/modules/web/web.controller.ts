@@ -28,29 +28,6 @@ export class WebController {
   }
 
   @UseGuards(AuthGuard)
-  @Put('editApiKey')
-  async updateApiKey(
-    @Request() req,
-    @Query('apiKey') apiKey: string,
-  ): Promise<object> {
-    return await this.webService.updateApiKey(apiKey, req.user.id);
-  }
-
-  @UseGuards(AuthGuard)
-  @Put('editTinyAccount')
-  async editTinyAccount(
-    @Request() req,
-    @Query('username') username: string,
-    @Query('password') password: string,
-  ): Promise<object> {
-    return await this.webService.updateTinyAccount(
-      username,
-      password,
-      req.user.id,
-    );
-  }
-
-  @UseGuards(AuthGuard)
   @Put('editIsActive')
   async updateIsActive(
     @Request() req,

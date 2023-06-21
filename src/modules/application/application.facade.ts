@@ -153,26 +153,20 @@ export class ApplicationFacade {
     return response.data;
   }
 
-  async getTinyCookieById(id: number): Promise<object> {
+  async getTinyCookie(id: number): Promise<object> {
     const keys = await this.webRepository.getTinyKeysByUserId(id);
-    const cookie = '';
+    const cookie = 'asd';
 
     if (!keys)
       throw new UnauthorizedException(
         'O nome de usuário e a senha não correspondem',
       );
 
-    return await this.getTinyCookie(keys['tinyLogin'], keys['tinyPassword']);
-  }
-
-  async getTinyCookie(usarname: string, password: string): Promise<object> {
-    const cookie = '';
-
     const eLogin = await this.applicationService.sendBRequest(
       {
         metd: constants.E_LOGIN_FUNC_METD,
-        login: usarname,
-        password: password,
+        login: keys['tinyLogin'],
+        password: keys['tinyPassword'],
       },
       cookie,
       constants.SCRAPED_LOGIN_ENDPOINT,

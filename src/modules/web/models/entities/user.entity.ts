@@ -27,8 +27,8 @@ export class User {
   botIsActive: boolean;
 
   @Column({ type: 'varchar' })
-  tinyLogin: string;
+  tinyLogin: boolean;
 
   @Column({ type: 'varchar' })
-  tinyPassword: string;
+  tinyPassword: boolean;
 }
