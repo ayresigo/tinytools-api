@@ -1,11 +1,8 @@
 import {
   BadRequestException,
-  Inject,
   Injectable,
   NotFoundException,
-  UnauthorizedException,
   UnprocessableEntityException,
-  forwardRef,
 } from '@nestjs/common';
 import { WebRepository } from './web.repository';
 import { ProductDto } from './models/dto/product.dto';
@@ -13,13 +10,11 @@ import { SignInDto } from './models/dto/signIn.dto';
 import { User } from './models/entities/user.entity';
 import { Product } from './models/entities/product.entity';
 import { Utils } from 'src/utils/utils';
-import { ApplicationFacade } from '../application/application.facade';
-import { ApplicationService } from '../application/application.service';
+import { BaseExceptionFilter } from '@nestjs/core';
 
 @Injectable()
 export class WebService {
   constructor(
-    private readonly applicationFacade: ApplicationFacade,
     private readonly webRepository: WebRepository,
     private readonly utils: Utils,
   ) {}
@@ -30,47 +25,6 @@ export class WebService {
       return user;
     } catch (e) {
       throw new NotFoundException('Usuario não encontrado');
-    }
-  }
-
-  async updateApiKey(apiKey: string, user: number) {
-    try {
-      return await this.webRepository.updateApiKeyByUserId(user, apiKey);
-    } catch (e) {
-      throw new BadRequestException(e.message);
-    }
-  }
-
-  async updateTinyAccount(username: string, password: string, user: number) {
-    try {
-      await this.applicationFacade.getTinyCookie(username, password); // Tenta logar na conta.
-    } catch (e) {
-      throw new UnauthorizedException(e.message);
-    }
-
-    try {
-      return await this.webRepository.updateTinyAccountByUserId(
-        user,
-        username,
-        password,
-      );
-    } catch (e) {
-      throw new BadRequestException(e.message);
-    }
-  }
-
-  async getUserKeys(user: number): Promise<object> {
-    try {
-      let apiKey = await this.webRepository.getApiKeyByUserId(user);
-      let tinyAccount = await this.webRepository.getTinyKeysByUserId(user);
-
-      return {
-        apiKey: apiKey['apiKey'],
-        tinyLogin: tinyAccount['tinyLogin'],
-        tinyPassword: tinyAccount['tinyPassword'],
-      };
-    } catch (e) {
-      throw new BadRequestException(e.message);
     }
   }
 
@@ -95,16 +49,10 @@ export class WebService {
 
   async getObfuscatedUserKeys(user: number): Promise<object> {
     try {
-      let response = await this.getUserKeys(user);
-      const obfuscatedApiKey = this.obfuscateString(response['apiKey'], 5);
-      // const obfuscatedLogin = this.obfuscateString(response['tinyLogin']);
-      const obfuscatedLogin = response['tinyLogin'];
-      const obfuscatedPassword = this.obfuscateString(response['tinyPassword']);
-      return {
-        apiKey: obfuscatedApiKey,
-        tinyLogin: obfuscatedLogin,
-        tinyPassword: obfuscatedPassword,
-      };
+      let response = await this.getApiKey(user);
+      const obfuscatedApiKey = this.obfuscateString(response['apiKey']);
+      const obfuscatedCookie = this.obfuscateString(response['cookie']);
+      return { apiKey: obfuscatedApiKey, cookie: obfuscatedCookie };
     } catch (e) {
       throw new BadRequestException(e.message);
     }
@@ -198,13 +146,13 @@ export class WebService {
     return Number.isNaN(number) || !Number.isFinite(number) || !number;
   }
 
-  private obfuscateString(str: string, qtd: number = 0): string {
+  private obfuscateString(str: string): string {
     const len = str.length;
-    if (len <= qtd) {
+    if (len <= 2) {
       return str;
     }
     const obfuscationChar = '*';
-    const visibleChars = qtd;
+    const visibleChars = 2;
     const obfuscationCount = len - visibleChars;
     return (
       str.substr(0, visibleChars) + obfuscationChar.repeat(obfuscationCount)

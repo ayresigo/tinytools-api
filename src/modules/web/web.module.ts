@@ -1,18 +1,19 @@
 import { Module } from '@nestjs/common';
 import { WebService } from './web.service';
 import { WebController } from './web.controller';
+import { TypeOrmModule } from '@nestjs/typeorm';
 import { WebRepository } from './web.repository';
+import { User } from './models/entities/user.entity';
+import { Product } from './models/entities/product.entity';
 import { Utils } from 'src/utils/utils';
-import { SharedModule } from '../application/shared.module';
-import { EntitiesModule } from './typeorm.module';
+
 
 @Module({
   imports: [
-    SharedModule,
-    EntitiesModule,
+    TypeOrmModule.forFeature([User]),
+    TypeOrmModule.forFeature([Product]),
   ],
   providers: [WebService, WebRepository, Utils],
   controllers: [WebController],
-  exports: [WebService, WebRepository, Utils],
 })
 export class WebModule {}
