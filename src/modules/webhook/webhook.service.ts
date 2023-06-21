@@ -23,14 +23,13 @@ export class WebhookService {
     return await this.startRoutine(id, keys);
   }
 
-  async receiveGoldtech(body: object): Promise<object> {
+  async receiveCustomWebhook(body: object, storeName: string): Promise<object> {
     if (
       body.hasOwnProperty('dados') &&
       body['dados'].hasOwnProperty('codigoSituacao') &&
       body['dados']['codigoSituacao'] === 'preparando_envio' &&
       body['dados']['idNotaFiscal'] != '0'
     ) {
-      const storeName = 'goldtech';
       const isActive = await this.webRepository.getBotIsActiveByName(storeName);
       if (isActive['botIsActive']) {
         const userKeys = await this.webRepository.getApiKeyAndIdByName(
@@ -47,7 +46,7 @@ export class WebhookService {
   async startRoutine(id: string, userKeys: UserKeysDto): Promise<object> {
     try {
       const priceReferences = await this.webService.getItems(userKeys.userId);
-      const cookie = await this.applicationFacade.getTinyCookie(
+      const cookie = await this.applicationFacade.getTinyCookieById(
         userKeys.userId,
       );
 

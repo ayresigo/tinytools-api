@@ -10,7 +10,13 @@ export class WebhookController {
   @HttpCode(200)
   @Post('goldtech')
   async receiveGoldtechWebhook(@Body() body: object) {
-    return this.webhookService.receiveGoldtech(body);
+    return this.webhookService.receiveCustomWebhook(body, 'goldtech');
+  }
+
+  @HttpCode(200)
+  @Post('megatech')
+  async receiveMegatechWebhook(@Body() body: object) {
+    return this.webhookService.receiveCustomWebhook(body, 'megatech');
   }
 
   @HttpCode(200)

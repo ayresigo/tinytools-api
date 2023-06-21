@@ -2,20 +2,18 @@ import { Module } from '@nestjs/common';
 import { WebhookController } from './webhook.controller';
 import { WebhookService } from './webhook.service';
 import { ApplicationModule } from '../application/application.module';
-import { WebRepository } from '../web/web.repository';
-import { TypeOrmModule } from '@nestjs/typeorm';
-import { User } from '../web/models/entities/user.entity';
-import { Product } from '../web/models/entities/product.entity';
-import { WebService } from '../web/web.service';
-import { Utils } from 'src/utils/utils';
+import { SharedModule } from '../application/shared.module';
+import { WebModule } from '../web/web.module';
+import { EntitiesModule } from '../web/typeorm.module';
 
 @Module({
   imports: [
+    WebModule,
     ApplicationModule,
-    TypeOrmModule.forFeature([User]),
-    TypeOrmModule.forFeature([Product]),
+    SharedModule,
+    EntitiesModule,
   ],
-  providers: [WebhookService, WebRepository, WebService, Utils],
+  providers: [WebhookService],
   controllers: [WebhookController],
 })
 export class WebhookModule {}
