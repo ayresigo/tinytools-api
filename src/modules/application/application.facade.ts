@@ -155,7 +155,6 @@ export class ApplicationFacade {
 
   async getTinyCookieById(id: number): Promise<object> {
     const keys = await this.webRepository.getTinyKeysByUserId(id);
-    const cookie = '';
 
     if (!keys)
       throw new UnauthorizedException(
@@ -166,7 +165,7 @@ export class ApplicationFacade {
   }
 
   async getTinyCookie(usarname: string, password: string): Promise<object> {
-    const cookie = '';
+    const cookie = 'dummy';
 
     const eLogin = await this.applicationService.sendBRequest(
       {
