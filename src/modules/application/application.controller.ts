@@ -8,13 +8,12 @@ import {
   HttpStatus,
   UseGuards,
   Request,
-  Head,
-  Header,
 } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
-import { ApplicationFacade } from './application.facade';
 import { AddInvoiceDto } from './models/addInvoice.dto';
 import { CookieGuard } from '../auth/cookie.guard';
+import { AuthGuard } from '../auth/auth.guard';
+import { ApplicationFacade } from './application.facade';
 
 @ApiTags('Application')
 @Controller('app')
@@ -30,13 +29,10 @@ export class ApplicationController {
     return await this.applicationFacade.searchProduct(req.apiKey, search);
   }
 
-  // @UseGuards(CookieGuard)
+  @UseGuards(AuthGuard)
   @Get('getCookie')
-  async GetTinyCookie(
-    @Request() req,
-    @Query('id') id: number,
-  ): Promise<object> {
-    return await this.applicationFacade.getTinyCookie(id);
+  async GetTinyCookie(@Request() req): Promise<object> {
+    return await this.applicationFacade.getTinyCookieById(req.user.id);
   }
 
   @UseGuards(CookieGuard)
