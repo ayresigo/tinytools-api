@@ -100,8 +100,6 @@ export class WebhookService {
           new AddInvoiceDto(invoice),
         );
 
-        console.log('Enviando nota ' + id);
-
         await this.applicationFacade.sendInvoice(
           userKeys.apiKey,
           parseInt(id),
