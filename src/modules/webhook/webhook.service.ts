@@ -45,6 +45,7 @@ export class WebhookService {
 
   async startRoutine(id: string, userKeys: UserKeysDto): Promise<object> {
     try {
+      var result = { status_code: 999, message: 'An error has occurred.' };
       const priceReferences = await this.webService.getItems(userKeys.userId);
       const cookie = await this.applicationFacade.getTinyCookieById(
         userKeys.userId,
@@ -106,15 +107,20 @@ export class WebhookService {
           'N',
         );
 
-        return { status_code: 200, message: 'Invoice ' + id + ' sent.' };
+        result = { status_code: 200, message: 'Invoice ' + id + ' sent.' };
+        console.log(result);
+        return result;
       }
 
-      return {
+      result = {
         status_code: 200,
         message: 'Nothing to be changed in invoice ' + id,
       };
+      console.log(result);
     } catch (e) {
-      return { status_code: e.statusCode, message: e.message };
+      result = { status_code: e.statusCode, message: e.message };
+      console.log(result);
+      return result;
     }
   }
 }
