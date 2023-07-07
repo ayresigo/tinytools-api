@@ -100,15 +100,20 @@ export class WebhookService {
           new AddInvoiceDto(invoice),
         );
 
-        return await this.applicationFacade.sendInvoice(
+        console.log('Enviando nota ' + id);
+
+        await this.applicationFacade.sendInvoice(
           userKeys.apiKey,
           parseInt(id),
           'N',
         );
+
+        return { status_code: 200, message: 'Invoice ' + id + ' sent.' };
       }
 
       return {
-        message: 'No item to change',
+        status_code: 200,
+        message: 'Nothing to be changed in invoice ' + id,
       };
     } catch (e) {
       return { status_code: e.statusCode, message: e.message };
