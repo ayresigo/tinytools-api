@@ -4,7 +4,6 @@ import { WebRepository } from '../web/web.repository';
 import { AddInvoiceDto } from '../application/models/addInvoice.dto';
 import { UserKeysDto } from './models/userKeys.dto';
 import { WebService } from '../web/web.service';
-import { isatty } from 'tty';
 
 @Injectable()
 export class WebhookService {
@@ -45,7 +44,12 @@ export class WebhookService {
 
   async startRoutine(id: string, userKeys: UserKeysDto): Promise<object> {
     try {
-      var result = { status_code: 999, message: 'An error has occurred.' };
+      var now = new Date();
+      var result = {
+        time: now.toISOString(),
+        status_code: 999,
+        message: 'An error has occurred.',
+      };
       const priceReferences = await this.webService.getItems(userKeys.userId);
       const cookie = await this.applicationFacade.getTinyCookieById(
         userKeys.userId,
@@ -107,18 +111,23 @@ export class WebhookService {
           'N',
         );
 
-        result = { status_code: 200, message: 'Invoice ' + id + ' sent.' };
+        result = {
+          ...result,
+          status_code: 200,
+          message: 'Invoice ' + id + ' sent.',
+        };
         console.log(result);
         return result;
       }
 
       result = {
+        ...result,
         status_code: 200,
         message: 'Nothing to be changed in invoice ' + id,
       };
       console.log(result);
     } catch (e) {
-      result = { status_code: e.statusCode, message: e.message };
+      result = { ...result, status_code: e.statusCode, message: e.message };
       console.log(result);
       return result;
     }
