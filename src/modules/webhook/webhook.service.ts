@@ -23,6 +23,7 @@ export class WebhookService {
   }
 
   async receiveCustomWebhook(body: object, storeName: string): Promise<object> {
+    console.log(body);
     if (
       body.hasOwnProperty('dados') &&
       body['dados'].hasOwnProperty('codigoSituacao') &&
