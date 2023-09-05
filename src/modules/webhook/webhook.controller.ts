@@ -10,21 +10,29 @@ export class WebhookController {
   @HttpCode(200)
   @Post('goldtech')
   async receiveGoldtechWebhook(@Body() body: object) {
-    this.webhookService.receiveCustomWebhook(body, 'goldtech');
+    var response = await this.webhookService.receiveCustomWebhook(
+      body,
+      'goldtech',
+    );
+    
     return 'webhook received';
   }
 
   @HttpCode(200)
   @Post('megatech')
   async receiveMegatechWebhook(@Body() body: object) {
-    this.webhookService.receiveCustomWebhook(body, 'megatech');
+    var response = await this.webhookService.receiveCustomWebhook(
+      body,
+      'megatech',
+      
     return 'webhook received';
   }
 
   @HttpCode(200)
   @Get('startRoutine')
   async start_routine(@Query('id') id: string) {
-    this.webhookService.testWebhook(id);
+    var response = await this.webhookService.testWebhook(id);
+
     return 'webhook received';
   }
 }
