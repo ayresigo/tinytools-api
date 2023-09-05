@@ -24,7 +24,8 @@ export class WebhookController {
     var response = await this.webhookService.receiveCustomWebhook(
       body,
       'megatech',
-      
+    );
+
     return 'webhook received';
   }
 
