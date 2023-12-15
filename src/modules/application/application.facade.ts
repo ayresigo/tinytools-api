@@ -167,6 +167,20 @@ export class ApplicationFacade {
   async getTinyCookie(usarname: string, password: string): Promise<object> {
     const cookie = 'dummy';
 
+    const aLogin = await this.applicationService.sendXRequest({
+      login: usarname,
+      password: password,
+    });
+
+    const { dynamicUrl, setCookieResponse } = aLogin;
+
+    const bLogin = await this.applicationService.sendYRequest(
+      dynamicUrl,
+      usarname,
+      password,
+      setCookieResponse,
+    );
+
     const eLogin = await this.applicationService.sendBRequest(
       {
         metd: constants.E_LOGIN_FUNC_METD,
@@ -177,14 +191,14 @@ export class ApplicationFacade {
       constants.SCRAPED_LOGIN_ENDPOINT,
     );
 
-    let eResponse = this.mapObject(eLogin, null);
+    const eResponse = this.mapObject(eLogin, null);
 
     if ('error' in eResponse)
       throw new UnauthorizedException(
         'O nome de usuário e a senha não correspondem',
       );
 
-    const fLogin = await this.applicationService.sendBRequest(
+    await this.applicationService.sendBRequest(
       {
         metd: constants.F_LOGIN_FUNC_METD,
         uidLogin: eResponse['response']['uidLogin'],
@@ -194,7 +208,7 @@ export class ApplicationFacade {
       constants.SCRAPED_LOGIN_ENDPOINT,
     );
 
-    return fLogin;
+    return bLogin;
   }
 
   async calcTax(
@@ -220,8 +234,8 @@ export class ApplicationFacade {
     secondElement: string,
     operator: string,
   ) {
-    let _firstElement = parseFloat(firstElement.replace(',', '.'));
-    let _secondElement = parseFloat(secondElement.replace(',', '.'));
+    const _firstElement = parseFloat(firstElement.replace(',', '.'));
+    const _secondElement = parseFloat(secondElement.replace(',', '.'));
     let _result = 0;
     switch (operator) {
       case 'multiply':
@@ -238,7 +252,7 @@ export class ApplicationFacade {
 
   //adicionar um try catch e uns throws aqui
   private mapObject(object: object, prefix: string) {
-    let props = object['response'];
+    const props = object['response'];
     let result = {};
     props.forEach((element) => {
       if (element['cmd'] == 'as') result[element['elm']] = element['val'];
@@ -249,8 +263,10 @@ export class ApplicationFacade {
           prefix == constants.TEMP_ITEM_PREFIX ||
           prefix == constants.SENT_TEMP_ITEM_PREFIX
         ) {
-          let parsedSrc = this.parseNestedBraces(element['src']);
-          let parsedObj = JSON.parse(unescape(parsedSrc[parsedSrc.length - 1]));
+          const parsedSrc = this.parseNestedBraces(element['src']);
+          const parsedObj = JSON.parse(
+            unescape(parsedSrc[parsedSrc.length - 1]),
+          );
           result = parsedObj;
         }
       } else if (element['cmd'] == 'rt') result['response'] = element['val'];
@@ -270,17 +286,17 @@ export class ApplicationFacade {
   }
 
   private parseNestedBraces(text) {
-    let stack = [];
-    let matches = [];
+    const stack = [];
+    const matches = [];
 
     for (let i = 0; i < text.length; i++) {
       if (text[i] === '{') {
         stack.push(i);
       } else if (text[i] === '}') {
         if (stack.length > 0) {
-          let startIndex = stack.pop();
-          let endIndex = i;
-          let match = text.substring(startIndex, endIndex + 1);
+          const startIndex = stack.pop();
+          const endIndex = i;
+          const match = text.substring(startIndex, endIndex + 1);
           matches.push(match);
         }
       }

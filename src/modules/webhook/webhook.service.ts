@@ -56,6 +56,9 @@ export class WebhookService {
         userKeys.userId,
       );
 
+      // console.log(cookie['cookie']);
+      // console.log(id, ' <<< ID');
+
       let invoice = await this.applicationFacade.searchInvoice(
         cookie['cookie'],
         id,
@@ -75,7 +78,9 @@ export class WebhookService {
             item.id,
           );
 
-          await this.applicationFacade.addTempItem(
+          console.log(tempItem);
+
+          const x = await this.applicationFacade.addTempItem(
             cookie['cookie'],
             id,
             item.id,
@@ -84,12 +89,14 @@ export class WebhookService {
             tempItem,
           );
 
+          console.log(x);
+
           changedInvoice = true;
         }
       }
 
       if (changedInvoice) {
-        await this.applicationFacade.addInvoice(
+        const test = await this.applicationFacade.addInvoice(
           cookie['cookie'],
           id,
           new AddInvoiceDto(invoice),
@@ -99,6 +106,8 @@ export class WebhookService {
           cookie['cookie'],
           id,
         );
+
+        console.log(invoice);
 
         await this.applicationFacade.addInvoice(
           cookie['cookie'],
@@ -129,7 +138,7 @@ export class WebhookService {
       console.log(result);
     } catch (e) {
       result = { ...result, status_code: e.statusCode, message: e.message };
-      console.log(result);
+      // console.log(e, 'ERRO');
       return result;
     }
   }
