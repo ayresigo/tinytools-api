@@ -5,7 +5,7 @@ export const constants = {
   SCRAPED_BASE_URL: 'https://erp.tiny.com.br/',
   SCRAPED_INVOICE_ENDPOINT: 'services/notas.fiscais.server.php',
   SCRAPED_LOGIN_ENDPOINT: 'services/reforma.sistema.server.php',
-  SCRAPED_FRONT_VERSTION: '3.52.04',
+  SCRAPED_FRONT_VERSTION: '3.58.22',
 
   AUTH_ERROR_PREFIX: 'alert(',
   INVOICE_ITEM_PREFIX: 'setarArrayItens(',
@@ -18,6 +18,8 @@ export const constants = {
   ADD_TEMP_ITEM_FUNC: 'adicionarItemTmpXajax',
   CALC_TAXES_FUNC: 'calcularImpostos',
   LOGIN_FUNC_CLSS: 'Login\\Login',
+
+  A_LOGIN_FUNC_METD: 'ewq',
   E_LOGIN_FUNC_METD: 'efetuarLogin',
   F_LOGIN_FUNC_METD: 'finalizarLogin',
 
