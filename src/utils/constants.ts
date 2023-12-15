@@ -5,8 +5,6 @@ export const constants = {
   SCRAPED_BASE_URL: 'https://erp.tiny.com.br/',
   SCRAPED_INVOICE_ENDPOINT: 'services/notas.fiscais.server.php',
   SCRAPED_LOGIN_ENDPOINT: 'services/reforma.sistema.server.php',
-  SCRAPED_NEW_LOGIN_ENDPOINT:
-    'https://accounts.tiny.com.br/realms/tiny/login-actions/authenticate?session_code=lTurbJm5_ixTtIH-AVeQBgfTuxPj-N6FwdaUwZAvbQE&execution=fa1d2a17-d620-419a-a821-175069afcdc7&client_id=tiny-webapp&tab_id=_jvjLSuqE2M',
   SCRAPED_FRONT_VERSTION: '3.58.22',
 
   AUTH_ERROR_PREFIX: 'alert(',
