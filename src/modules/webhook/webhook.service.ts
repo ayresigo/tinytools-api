@@ -78,7 +78,7 @@ export class WebhookService {
             item.id,
           );
 
-          console.log(tempItem);
+          // console.log(tempItem);
 
           const x = await this.applicationFacade.addTempItem(
             cookie['cookie'],
@@ -107,7 +107,7 @@ export class WebhookService {
           id,
         );
 
-        console.log(invoice);
+        // console.log(invoice);
 
         await this.applicationFacade.addInvoice(
           cookie['cookie'],
