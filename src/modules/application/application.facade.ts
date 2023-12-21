@@ -164,28 +164,31 @@ export class ApplicationFacade {
     return await this.getTinyCookie(keys['tinyLogin'], keys['tinyPassword']);
   }
 
-  async getTinyCookie(usarname: string, password: string): Promise<object> {
+  async getTinyCookie(login: string, password: string): Promise<object> {
     const cookie = 'dummy';
 
     const aLogin = await this.applicationService.sendXRequest({
-      login: usarname,
-      password: password,
+      login,
+      password,
     });
 
     const { dynamicUrl, setCookieResponse } = aLogin;
 
     const bLogin = await this.applicationService.sendYRequest(
       dynamicUrl,
-      usarname,
+      login,
       password,
       setCookieResponse,
     );
 
+    const { tinyCookie, code } = bLogin;
+
     const eLogin = await this.applicationService.sendBRequest(
       {
         metd: constants.E_LOGIN_FUNC_METD,
-        login: usarname,
-        password: password,
+        login,
+        password,
+        code,
       },
       cookie,
       constants.SCRAPED_LOGIN_ENDPOINT,
@@ -208,7 +211,7 @@ export class ApplicationFacade {
       constants.SCRAPED_LOGIN_ENDPOINT,
     );
 
-    return bLogin;
+    return tinyCookie;
   }
 
   async calcTax(

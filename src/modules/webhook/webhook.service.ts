@@ -45,7 +45,9 @@ export class WebhookService {
 
   async startRoutine(id: string, userKeys: UserKeysDto): Promise<object> {
     try {
+      // eslint-disable-next-line no-var
       var now = new Date();
+      // eslint-disable-next-line no-var
       var result = {
         time: now.toISOString(),
         status_code: 999,
@@ -55,10 +57,6 @@ export class WebhookService {
       const cookie = await this.applicationFacade.getTinyCookieById(
         userKeys.userId,
       );
-
-      // console.log(cookie['cookie']);
-      // console.log(id, ' <<< ID');
-
       let invoice = await this.applicationFacade.searchInvoice(
         cookie['cookie'],
         id,
@@ -96,7 +94,7 @@ export class WebhookService {
       }
 
       if (changedInvoice) {
-        const test = await this.applicationFacade.addInvoice(
+        await this.applicationFacade.addInvoice(
           cookie['cookie'],
           id,
           new AddInvoiceDto(invoice),
@@ -106,8 +104,6 @@ export class WebhookService {
           cookie['cookie'],
           id,
         );
-
-        // console.log(invoice);
 
         await this.applicationFacade.addInvoice(
           cookie['cookie'],
@@ -138,7 +134,6 @@ export class WebhookService {
       console.log(result);
     } catch (e) {
       result = { ...result, status_code: e.statusCode, message: e.message };
-      // console.log(e, 'ERRO');
       return result;
     }
   }
