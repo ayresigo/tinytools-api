@@ -54,7 +54,12 @@ export class ApplicationService {
       if (response.data?.retorno?.codigo_erro)
         throw new BadRequestException(response.data.retorno.erros[0].erro);
 
-      return this.handleCookie(response);
+      const responseX = new URLSearchParams(response.request?.res?.responseUrl);
+
+      return {
+        tinyCookie: await this.handleCookie(response),
+        code: responseX.get('code'),
+      };
     } catch (e) {
       throw new BadRequestException(e.message);
     }
@@ -117,13 +122,12 @@ export class ApplicationService {
       response.data['response'].length == 1 &&
       response.data['response'][0]['src']?.includes(constants.AUTH_ERROR_PREFIX)
     )
-      console.log('AUTH ERROR RESOPNSE BODY LEMAS CHECK');
-
-    // Obtendo cookie de autênticação:
-    // Como o método principal retorna response.data e o cookie de sessão vem via header, precisamos retornar ele aqui nesse momento.
-    if ('metd' in params && params['metd'] == constants.F_LOGIN_FUNC_METD) {
-      return this.handleCookie(response);
-    }
+      if ('metd' in params && params['metd'] == constants.F_LOGIN_FUNC_METD) {
+        // console.log('AUTH ERROR RESOPNSE BODY LEMAS CHECK');
+        // Obtendo cookie de autênticação:
+        // Como o método principal retorna response.data e o cookie de sessão vem via header, precisamos retornar ele aqui nesse momento.
+        return this.handleCookie(response);
+      }
 
     return response.data;
   }
@@ -169,7 +173,7 @@ export class ApplicationService {
     } else if (endpoint === constants.SCRAPED_LOGIN_ENDPOINT) {
       switch (params['metd']) {
         case constants.E_LOGIN_FUNC_METD:
-          args = `[{"login":"${params['login']}","senha":"${params['password']}","derrubarSessoes":true,"ehParceiro":false,"captchaResponse":""}]`;
+          args = `[{"login":"${params['login']}","senha":"${params['password']}","derrubarSessoes":true,"ehParceiro":false,"captchaResponse":"","code":"${params['code']}","sessionAccounts":{}}]`;
           break;
         case constants.F_LOGIN_FUNC_METD:
           args = `["${params['uidLogin']}",${params['idUsuario']},null]`;
