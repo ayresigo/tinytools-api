@@ -115,7 +115,7 @@ export class ApplicationService {
         headers,
       });
     } catch (e) {
-      console.log('sendBRequest catch');
+      console.log('sendBRequest catch', e);
       throw new BadRequestException(e.message);
     }
 
