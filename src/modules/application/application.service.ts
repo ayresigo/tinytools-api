@@ -23,7 +23,7 @@ export class ApplicationService {
       const setCookieResponse = response.headers['set-cookie'];
       return { response, dynamicUrl, setCookieResponse };
     } catch (e) {
-      console.log('we do not throw catches');
+      console.log('we do not throw catches', e);
     }
   }
 
