@@ -131,7 +131,7 @@ export class WebhookService {
         status_code: 200,
         message: 'Nothing to be changed in invoice ' + id,
       };
-      console.log(result);
+      console.log(result, 'Nothing to change');
     } catch (e) {
       result = { ...result, status_code: e.statusCode, message: e.message };
       return result;

@@ -44,6 +44,7 @@ export class ApplicationFacade {
   }
 
   async searchInvoice(cookie: string, id: string): Promise<object> {
+    console.log('Searching invoice -', id);
     const response = await this.applicationService.sendBRequest(
       {
         func: constants.GET_INVOICE_FUNC,
@@ -66,6 +67,7 @@ export class ApplicationFacade {
     id: string,
     itemId: string,
   ): Promise<object> {
+    console.log('Getting item -', id);
     const response = await this.applicationService.sendBRequest(
       {
         func: constants.GET_TEMP_ITEM_FUNC,
@@ -95,6 +97,8 @@ export class ApplicationFacade {
       'multiply',
     );
 
+    console.log('Adding temp item -', id);
+
     const response = await this.applicationService.sendBRequest(
       {
         func: constants.ADD_TEMP_ITEM_FUNC,
@@ -115,6 +119,7 @@ export class ApplicationFacade {
     id: string,
     invoice: AddInvoiceDto,
   ): Promise<object> {
+    console.log('Adding temp item -', id);
     const taxes = await this.calcTax(cookie, id, invoice.idNotaTmp);
 
     invoice.desconto = '0,00';
@@ -144,6 +149,7 @@ export class ApplicationFacade {
     invoiceId: number,
     sendEmail: string,
   ): Promise<object> {
+    console.log('Sending invoice -', invoiceId);
     const response = await this.applicationService.sendARequest(
       constants.PROVIDED_SEND_INVOICE_ENDPOINT,
       { id: invoiceId, enviarEmail: sendEmail },
@@ -219,6 +225,7 @@ export class ApplicationFacade {
     id: string,
     tempInvoiceId: string,
   ): Promise<object> {
+    console.log('Calculating taxes -', id);
     const response = await this.applicationService.sendBRequest(
       {
         func: constants.CALC_TAXES_FUNC,

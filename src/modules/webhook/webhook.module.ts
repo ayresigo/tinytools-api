@@ -7,12 +7,7 @@ import { WebModule } from '../web/web.module';
 import { EntitiesModule } from '../web/typeorm.module';
 
 @Module({
-  imports: [
-    WebModule,
-    ApplicationModule,
-    SharedModule,
-    EntitiesModule,
-  ],
+  imports: [WebModule, ApplicationModule, SharedModule, EntitiesModule],
   providers: [WebhookService],
   controllers: [WebhookController],
 })
