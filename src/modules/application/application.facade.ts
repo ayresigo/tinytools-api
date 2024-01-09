@@ -180,6 +180,8 @@ export class ApplicationFacade {
       password,
     });
 
+    console.timeLog('aLogin success');
+
     const { dynamicUrl, setCookieResponse } = aLogin;
 
     const bLogin = await this.applicationService.sendYRequest(
@@ -191,6 +193,8 @@ export class ApplicationFacade {
 
     const { tinyCookie, code } = bLogin;
 
+    console.log('bLogin success');
+
     const eLogin = await this.applicationService.sendBRequest(
       {
         metd: constants.E_LOGIN_FUNC_METD,
@@ -201,6 +205,8 @@ export class ApplicationFacade {
       cookie,
       constants.SCRAPED_LOGIN_ENDPOINT,
     );
+
+    console.log('eLogin sucess');
 
     const eResponse = this.mapObject(eLogin, null);
 
@@ -218,6 +224,8 @@ export class ApplicationFacade {
       cookie,
       constants.SCRAPED_LOGIN_ENDPOINT,
     );
+
+    console.log('passed bRequest login');
 
     return tinyCookie;
   }

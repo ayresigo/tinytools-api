@@ -14,6 +14,7 @@ export class ApplicationService {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   async sendXRequest(params: object) {
     try {
+      console.log('Starting to send XRequest for login');
       const url =
         'https://accounts.tiny.com.br/realms/tiny/protocol/openid-connect/auth?client_id=tiny-webapp&redirect_uri=https://erp.tiny.com.br/login&scope=openid&response_type=code';
       const response = await client.get(url, {});
