@@ -45,6 +45,7 @@ export class WebhookService {
 
   async startRoutine(id: string, userKeys: UserKeysDto): Promise<object> {
     try {
+      console.log('Starting routine for -', id);
       // eslint-disable-next-line no-var
       var now = new Date();
       // eslint-disable-next-line no-var
