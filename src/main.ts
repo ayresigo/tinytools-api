@@ -17,10 +17,12 @@ async function bootstrap() {
   //   key: fs.readFileSync('caminho/da/chave.privada.key'),
   // };
 
-  const app: NestExpressApplication = await NestFactory.create(AppModule, 
-  //   {
-  //   httpsOptions,
-  // }
+  const app: NestExpressApplication = await NestFactory.create(
+    AppModule,
+    // { logger: console },
+    //   {
+    //   httpsOptions,
+    // }
   );
   const config: ConfigService = app.get(ConfigService);
   const port: number = config.get<number>('PORT');
