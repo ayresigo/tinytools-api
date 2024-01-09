@@ -160,6 +160,7 @@ export class ApplicationFacade {
   }
 
   async getTinyCookieById(id: number): Promise<object> {
+    console.log('Getting tinyCookieById');
     const keys = await this.webRepository.getTinyKeysByUserId(id);
 
     if (!keys)
@@ -171,6 +172,7 @@ export class ApplicationFacade {
   }
 
   async getTinyCookie(login: string, password: string): Promise<object> {
+    console.log('Starting to get tiny cookie');
     const cookie = 'dummy';
 
     const aLogin = await this.applicationService.sendXRequest({

@@ -54,6 +54,10 @@ export class WebhookService {
         message: 'An error has occurred.',
       };
       const priceReferences = await this.webService.getItems(userKeys.userId);
+      // console.log(
+      //   'priceReferences =>',
+      //   priceReferences.find((ref) => ref.sku == `561028`),
+      // );
       const cookie = await this.applicationFacade.getTinyCookieById(
         userKeys.userId,
       );
@@ -65,11 +69,15 @@ export class WebhookService {
       let changedInvoice = false;
 
       for (const item of invoice['itemsArray']) {
+        console.log('item =>', item);
         const reference = priceReferences.find(
           (ref) => ref.sku === item.codigo && ref.isActive === true,
         );
 
+        console.log(reference, 'different prices for this ref');
+
         if (reference && item.valorUnitario !== reference.price) {
+          console.log('different prices');
           const tempItem = await this.applicationFacade.getTempItem(
             cookie['cookie'],
             id,
@@ -87,7 +95,7 @@ export class WebhookService {
             tempItem,
           );
 
-          console.log(x);
+          console.log('tempItem -', x);
 
           changedInvoice = true;
         }

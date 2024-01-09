@@ -112,6 +112,7 @@ export class WebService {
 
   async getItems(user: number): Promise<ProductDto[]> {
     try {
+      console.log('Getting items for user -', user);
       let response = await this.webRepository.getProductsByUserId(user);
       let result = [];
       response.forEach((element) => {
@@ -120,6 +121,7 @@ export class WebService {
 
       return result;
     } catch (e) {
+      console.log(e.message, 'getItems error');
       throw new BadRequestException(e.message);
     }
   }
