@@ -180,7 +180,7 @@ export class ApplicationFacade {
       password,
     });
 
-    console.timeLog('aLogin success');
+    console.log('aLogin success');
 
     const { dynamicUrl, setCookieResponse } = aLogin;
 
