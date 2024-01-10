@@ -35,6 +35,7 @@ export class ApplicationService {
     setCookieResponse: string[],
   ) {
     try {
+      console.log('Starting to send YRequest for login');
       const form = `username=${username}&password=${password}`;
       const params = setCookieResponse;
 
