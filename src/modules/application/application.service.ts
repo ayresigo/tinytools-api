@@ -53,8 +53,10 @@ export class ApplicationService {
         },
       });
 
-      if (response.data?.retorno?.codigo_erro)
+      if (response.data?.retorno?.codigo_erro) {
+        console.log('response.data?.retorno?.codigo_erro');
         throw new BadRequestException(response.data.retorno.erros[0].erro);
+      }
 
       const responseX = new URLSearchParams(response.request?.res?.responseUrl);
 
