@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { BadRequestException, ConsoleLogger, Injectable } from '@nestjs/common';
 import axios, { AxiosResponse } from 'axios';
 import { CookieJar } from 'tough-cookie';
 import { constants } from 'src/utils/constants';
@@ -65,6 +65,7 @@ export class ApplicationService {
         code: responseX.get('code'),
       };
     } catch (e) {
+      console.log('SendYRequest CATCH ERROR', e);
       throw new BadRequestException(e.message);
     }
   }
