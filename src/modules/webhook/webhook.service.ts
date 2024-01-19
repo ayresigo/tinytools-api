@@ -15,7 +15,7 @@ export class WebhookService {
   ) {}
 
   async testWebhook(id: string) {
-    const storeName = 'goldtech';
+    const storeName = id.substring(0, 1) === '1' ? 'goldtech' : 'megatech';
     const userKeys = await this.webRepository.getApiKeyAndIdByName(storeName);
 
     const keys = new UserKeysDto(userKeys);
