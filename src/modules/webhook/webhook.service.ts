@@ -1,4 +1,4 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { Inject, Injectable, UnauthorizedException } from '@nestjs/common';
 import { ApplicationFacade } from '../application/application.facade';
 import { WebRepository } from '../web/web.repository';
 import { AddInvoiceDto } from '../application/models/addInvoice.dto';
@@ -142,8 +142,7 @@ export class WebhookService {
       };
       console.log(result, 'Nothing to change');
     } catch (e) {
-      result = { ...result, status_code: e.statusCode, message: e.message };
-      return result;
+      throw new UnauthorizedException(e);
     }
   }
 }
