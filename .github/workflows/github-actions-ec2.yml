@@ -27,5 +27,4 @@ jobs:
             cd tinytools-api/
             npm install
             npm run build
-            pm2 kill
-            pm2 start dist/main.js --name tinytools-api
+            pm2 restart dist/main.js --name tinytools-api --cron-restart="0 */6 * * *"
