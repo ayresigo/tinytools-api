@@ -5,7 +5,7 @@ export const constants = {
   SCRAPED_BASE_URL: 'https://erp.tiny.com.br/',
   SCRAPED_INVOICE_ENDPOINT: 'services/notas.fiscais.server.php',
   SCRAPED_LOGIN_ENDPOINT: 'services/reforma.sistema.server.php',
-  SCRAPED_FRONT_VERSTION: '3.59.37',
+  SCRAPED_FRONT_VERSTION: '3.60.01',
 
   AUTH_ERROR_PREFIX: 'alert(',
   INVOICE_ITEM_PREFIX: 'setarArrayItens(',
