@@ -70,11 +70,9 @@ export class WebhookService {
           id,
         );
       } catch (e){
-        if (e.message === 'invalid cookie'){
             const cookie = await this.applicationFacade.getTinyCookieById(
               userKeys.userId,
             );
-        }
         
         invoice = await this.applicationFacade.searchInvoice(
           id,
