@@ -14,7 +14,7 @@ export class ApplicationService {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   async sendXRequest(params: object) {
     try {
-      console.log('Starting to send XRequest for login');
+      // console.log('Starting to send XRequest for login');
       const url =
         'https://accounts.tiny.com.br/realms/tiny/protocol/openid-connect/auth?client_id=tiny-webapp&redirect_uri=https://erp.tiny.com.br/login&scope=openid&response_type=code';
       const response = await client.get(url, {});
@@ -24,7 +24,7 @@ export class ApplicationService {
       const setCookieResponse = response.headers['set-cookie'];
       return { response, dynamicUrl, setCookieResponse };
     } catch (e) {
-      console.log('we do not throw catches', e);
+      throw Error(e)
     }
   }
 
@@ -35,7 +35,7 @@ export class ApplicationService {
     setCookieResponse: string[],
   ) {
     try {
-      console.log('Starting to send YRequest for login');
+      // console.log('Starting to send YRequest for login');
       const form = `username=${username}&password=${password}`;
       const params = setCookieResponse;
 
@@ -60,12 +60,13 @@ export class ApplicationService {
 
       const responseX = new URLSearchParams(response.request?.res?.responseUrl);
 
+      // console.log('nowee', response)
+
       return {
         tinyCookie: await this.handleCookie(response),
         code: responseX.get('code'),
       };
     } catch (e) {
-      console.log('SendYRequest CATCH ERROR', e);
       throw new BadRequestException(e.message);
     }
   }
@@ -104,7 +105,7 @@ export class ApplicationService {
     }
   }
 
-  async sendBRequest(params: object, cookie: string, endpoint: string) {
+  async sendBRequest(params: object, endpoint: string) {
     try {
       // eslint-disable-next-line @typescript-eslint/no-var-requires
       const querystring = require('querystring');
@@ -120,6 +121,8 @@ export class ApplicationService {
       var response = await client.post(url, querystring.stringify(data), {
         headers,
       });
+
+      // response.request
     } catch (e) {
       console.log('sendBRequest catch', e);
       throw new BadRequestException(e.message);

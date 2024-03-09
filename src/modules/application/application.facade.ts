@@ -43,18 +43,21 @@ export class ApplicationFacade {
     throw new BadRequestException('Sku não encontrado');
   }
 
-  async searchInvoice(cookie: string, id: string): Promise<object> {
-    console.log('Searching invoice -', id);
+  async searchInvoice(id: string): Promise<object> {
+    // console.log('Searching invoice -', id);
     const response = await this.applicationService.sendBRequest(
       {
         func: constants.GET_INVOICE_FUNC,
         invoiceId: id,
       },
-      cookie,
       constants.SCRAPED_INVOICE_ENDPOINT,
     );
 
     const result = this.mapObject(response, constants.INVOICE_ITEM_PREFIX);
+
+    if (response.response[0].src.includes('Sua sessão expirou')) {
+      throw new UnauthorizedException('invalid cookie')
+    }
 
     if (Object.keys(result).length == 1)
       throw new NotFoundException(result['message']);
@@ -63,18 +66,16 @@ export class ApplicationFacade {
   }
 
   async getTempItem(
-    cookie: string,
     id: string,
     itemId: string,
   ): Promise<object> {
-    console.log('Getting item -', id);
+    // console.log('Getting item -', id);
     const response = await this.applicationService.sendBRequest(
       {
         func: constants.GET_TEMP_ITEM_FUNC,
         invoiceId: id,
         itemId: itemId,
       },
-      cookie,
       constants.SCRAPED_INVOICE_ENDPOINT,
     );
 
@@ -82,7 +83,6 @@ export class ApplicationFacade {
   }
 
   async addTempItem(
-    cookie: string,
     id: string,
     itemId: string,
     tempInvoiceId: string,
@@ -97,7 +97,7 @@ export class ApplicationFacade {
       'multiply',
     );
 
-    console.log('Adding temp item -', id);
+    // console.log('Adding temp item -', id);
 
     const response = await this.applicationService.sendBRequest(
       {
@@ -107,7 +107,6 @@ export class ApplicationFacade {
         tempInvoiceId: tempInvoiceId,
         tempItem: tempItem,
       },
-      cookie,
       constants.SCRAPED_INVOICE_ENDPOINT,
     );
 
@@ -115,12 +114,11 @@ export class ApplicationFacade {
   }
 
   async addInvoice(
-    cookie: string,
     id: string,
     invoice: AddInvoiceDto,
   ): Promise<object> {
-    console.log('Adding temp item -', id);
-    const taxes = await this.calcTax(cookie, id, invoice.idNotaTmp);
+    // console.log('Adding temp item -', id);
+    const taxes = await this.calcTax(id, invoice.idNotaTmp);
 
     invoice.desconto = '0,00';
     invoice.valorDesconto = '0,00';
@@ -137,7 +135,6 @@ export class ApplicationFacade {
         invoiceId: id,
         invoice: invoice,
       },
-      cookie,
       constants.SCRAPED_INVOICE_ENDPOINT,
     );
 
@@ -150,17 +147,23 @@ export class ApplicationFacade {
     sendEmail: string,
   ): Promise<object> {
     console.log('Sending invoice -', invoiceId);
-    const response = await this.applicationService.sendARequest(
-      constants.PROVIDED_SEND_INVOICE_ENDPOINT,
-      { id: invoiceId, enviarEmail: sendEmail },
-      apiKey,
-    );
 
-    return response.data;
+    let response 
+    try {
+      response = await this.applicationService.sendARequest(
+        constants.PROVIDED_SEND_INVOICE_ENDPOINT,
+        { id: invoiceId, enviarEmail: sendEmail },
+        apiKey,
+      );
+
+      return response.data;
+    } catch (e) {
+      throw new Error(e.message)
+    } 
   }
 
   async getTinyCookieById(id: number): Promise<object> {
-    console.log('Getting tinyCookieById');
+    // console.log('Getting tinyCookieById');
     const keys = await this.webRepository.getTinyKeysByUserId(id);
 
     if (!keys)
@@ -173,16 +176,16 @@ export class ApplicationFacade {
 
   async getTinyCookie(login: string, password: string): Promise<object> {
     console.log('Starting to get tiny cookie');
-    const cookie = 'dummy';
 
     const aLogin = await this.applicationService.sendXRequest({
       login,
       password,
     });
 
-    console.log('aLogin success');
+    // console.log('aLogin success');
 
     const { dynamicUrl, setCookieResponse } = aLogin;
+    // console.log(setCookieResponse)
 
     const bLogin = await this.applicationService.sendYRequest(
       dynamicUrl,
@@ -193,7 +196,7 @@ export class ApplicationFacade {
 
     const { tinyCookie, code } = bLogin;
 
-    console.log('bLogin success');
+    // console.log('bLogin success');
 
     const eLogin = await this.applicationService.sendBRequest(
       {
@@ -202,11 +205,10 @@ export class ApplicationFacade {
         password,
         code,
       },
-      cookie,
       constants.SCRAPED_LOGIN_ENDPOINT,
     );
 
-    console.log('eLogin sucess');
+    // console.log('eLogin sucess');
 
     const eResponse = this.mapObject(eLogin, null);
 
@@ -221,28 +223,27 @@ export class ApplicationFacade {
         uidLogin: eResponse['response']['uidLogin'],
         idUsuario: eResponse['response']['idUsuario'],
       },
-      cookie,
       constants.SCRAPED_LOGIN_ENDPOINT,
     );
 
-    console.log('passed bRequest login');
+    // console.log('passed bRequest login');
+
+    // console.log(tinyCookie)
 
     return tinyCookie;
   }
 
   async calcTax(
-    cookie: string,
     id: string,
     tempInvoiceId: string,
   ): Promise<object> {
-    console.log('Calculating taxes -', id);
+    // console.log('Calculating taxes -', id);
     const response = await this.applicationService.sendBRequest(
       {
         func: constants.CALC_TAXES_FUNC,
         invoiceId: id,
         tempInvoiceId: tempInvoiceId,
       },
-      cookie,
       constants.SCRAPED_INVOICE_ENDPOINT,
     );
 

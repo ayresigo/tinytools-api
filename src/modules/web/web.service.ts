@@ -112,7 +112,7 @@ export class WebService {
 
   async getItems(user: number): Promise<ProductDto[]> {
     try {
-      console.log('Getting items for user -', user);
+      // console.log('Getting items for user -', user);
       let response = await this.webRepository.getProductsByUserId(user);
       let result = [];
       response.forEach((element) => {

@@ -4,6 +4,7 @@ import { WebRepository } from '../web/web.repository';
 import { AddInvoiceDto } from '../application/models/addInvoice.dto';
 import { UserKeysDto } from './models/userKeys.dto';
 import { WebService } from '../web/web.service';
+import { CookieJar } from 'tough-cookie';
 
 @Injectable()
 export class WebhookService {
@@ -59,28 +60,42 @@ export class WebhookService {
       //   'priceReferences =>',
       //   priceReferences.find((ref) => ref.sku == `561028`),
       // );
-      const cookie = await this.applicationFacade.getTinyCookieById(
-        userKeys.userId,
-      );
-      let invoice = await this.applicationFacade.searchInvoice(
-        cookie['cookie'],
-        id,
-      );
+    
+
+      // console.log(cookie, 'cookiee')
+      let invoice
+
+      try {
+        invoice = await this.applicationFacade.searchInvoice(
+          id,
+        );
+      } catch (e){
+        if (e.message === 'invalid cookie'){
+            const cookie = await this.applicationFacade.getTinyCookieById(
+              userKeys.userId,
+            );
+        }
+        
+        invoice = await this.applicationFacade.searchInvoice(
+          id,
+        );
+        console.log(e)
+      }
+      
 
       let changedInvoice = false;
 
       for (const item of invoice['itemsArray']) {
-        console.log('item =>', item);
+        // console.log('item =>', item);
         const reference = priceReferences.find(
           (ref) => ref.sku === item.codigo && ref.isActive === true,
         );
 
-        console.log(reference, 'different prices for this ref');
+        // console.log(reference, 'different prices for this ref');
 
         if (reference && item.valorUnitario !== reference.price) {
-          console.log('different prices');
+          // console.log('different prices');
           const tempItem = await this.applicationFacade.getTempItem(
-            cookie['cookie'],
             id,
             item.id,
           );
@@ -88,7 +103,6 @@ export class WebhookService {
           // console.log(tempItem);
 
           const x = await this.applicationFacade.addTempItem(
-            cookie['cookie'],
             id,
             item.id,
             invoice['idNotaTmp'],
@@ -96,7 +110,7 @@ export class WebhookService {
             tempItem,
           );
 
-          console.log('tempItem -', x);
+          // console.log('tempItem -', x);
 
           changedInvoice = true;
         }
@@ -104,18 +118,15 @@ export class WebhookService {
 
       if (changedInvoice) {
         await this.applicationFacade.addInvoice(
-          cookie['cookie'],
           id,
           new AddInvoiceDto(invoice),
         );
 
         invoice = await this.applicationFacade.searchInvoice(
-          cookie['cookie'],
           id,
         );
 
         await this.applicationFacade.addInvoice(
-          cookie['cookie'],
           id,
           new AddInvoiceDto(invoice),
         );
@@ -142,7 +153,7 @@ export class WebhookService {
       };
       console.log(result, 'Nothing to change');
     } catch (e) {
-      throw new UnauthorizedException(e);
+      throw Error(e);
     }
   }
 }
