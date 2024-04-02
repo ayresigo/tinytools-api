@@ -7,10 +7,7 @@ import { SharedModule } from '../application/shared.module';
 import { EntitiesModule } from './typeorm.module';
 
 @Module({
-  imports: [
-    SharedModule,
-    EntitiesModule,
-  ],
+  imports: [SharedModule, EntitiesModule],
   providers: [WebService, WebRepository, Utils],
   controllers: [WebController],
   exports: [WebService, WebRepository, Utils],

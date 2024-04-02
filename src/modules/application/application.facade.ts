@@ -55,8 +55,10 @@ export class ApplicationFacade {
 
     const result = this.mapObject(response, constants.INVOICE_ITEM_PREFIX);
 
+    console.log(response);
+
     if (response.response[0].src.includes('Sua sessão expirou')) {
-      throw new UnauthorizedException('invalid cookie')
+      throw new UnauthorizedException('invalid cookie');
     }
 
     if (Object.keys(result).length == 1)
@@ -65,10 +67,7 @@ export class ApplicationFacade {
     return result;
   }
 
-  async getTempItem(
-    id: string,
-    itemId: string,
-  ): Promise<object> {
+  async getTempItem(id: string, itemId: string): Promise<object> {
     // console.log('Getting item -', id);
     const response = await this.applicationService.sendBRequest(
       {
@@ -113,10 +112,7 @@ export class ApplicationFacade {
     return this.mapObject(response, constants.SENT_TEMP_ITEM_PREFIX);
   }
 
-  async addInvoice(
-    id: string,
-    invoice: AddInvoiceDto,
-  ): Promise<object> {
+  async addInvoice(id: string, invoice: AddInvoiceDto): Promise<object> {
     // console.log('Adding temp item -', id);
     const taxes = await this.calcTax(id, invoice.idNotaTmp);
 
@@ -148,7 +144,7 @@ export class ApplicationFacade {
   ): Promise<object> {
     console.log('Sending invoice -', invoiceId);
 
-    let response 
+    let response;
     try {
       response = await this.applicationService.sendARequest(
         constants.PROVIDED_SEND_INVOICE_ENDPOINT,
@@ -158,8 +154,8 @@ export class ApplicationFacade {
 
       return response.data;
     } catch (e) {
-      throw new Error(e.message)
-    } 
+      throw new Error(e.message);
+    }
   }
 
   async getTinyCookieById(id: number): Promise<object> {
@@ -233,10 +229,7 @@ export class ApplicationFacade {
     return tinyCookie;
   }
 
-  async calcTax(
-    id: string,
-    tempInvoiceId: string,
-  ): Promise<object> {
+  async calcTax(id: string, tempInvoiceId: string): Promise<object> {
     // console.log('Calculating taxes -', id);
     const response = await this.applicationService.sendBRequest(
       {

@@ -9,6 +9,7 @@ export class ProductDto {
       this.id = object.id;
       this.sku = object.sku;
       this.price = utils.floatToString(object.price);
+      this.store = object.store;
       this.isActive = object.isActive;
     }
   }
@@ -24,6 +25,10 @@ export class ProductDto {
   @IsNotEmpty()
   @IsString()
   price: string;
+
+  @ApiProperty()
+  @IsString()
+  store: string | null;
 
   @ApiProperty()
   @IsNotEmpty()

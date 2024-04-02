@@ -121,7 +121,25 @@ export class WebRepository {
     });
   }
 
-  async getProductsByUserId(id: number): Promise<Product[]> {
+  async getProductsByUserId(id: number, store: string): Promise<Product[]> {
+    if (!store) {
+      return await this.productsRepository.find({
+        select: {
+          id: true,
+          isActive: true,
+          sku: true,
+          price: true,
+        },
+        where: {
+          user: id,
+        },
+        order: {
+          id: {
+            direction: 'asc',
+          },
+        },
+      });
+    }
     return await this.productsRepository.find({
       select: {
         id: true,
@@ -131,6 +149,7 @@ export class WebRepository {
       },
       where: {
         user: id,
+        store: store,
       },
       order: {
         id: {
@@ -140,11 +159,12 @@ export class WebRepository {
     });
   }
 
-  async getProductById(id: number, user: number) {
+  async getProductById(id: number, user: number, store: string) {
     return await this.productsRepository.findOne({
       where: {
         user: user,
         id: id,
+        store: store,
       },
     });
   }

@@ -110,10 +110,11 @@ export class WebService {
     }
   }
 
-  async getItems(user: number): Promise<ProductDto[]> {
+  async getItems(user: number, store: string | null): Promise<ProductDto[]> {
     try {
       // console.log('Getting items for user -', user);
-      let response = await this.webRepository.getProductsByUserId(user);
+      console.log(user, store);
+      let response = await this.webRepository.getProductsByUserId(user, store);
       let result = [];
       response.forEach((element) => {
         result = [...result, new ProductDto(element, this.utils)];
@@ -143,6 +144,7 @@ export class WebService {
           sku: element.sku,
           price: this.utils.stringToFloat(element.price),
           isActive: element.isActive,
+          store: element.store,
           user: user,
         };
         let status;
@@ -169,7 +171,11 @@ export class WebService {
     user: number,
   ): Promise<Product> {
     try {
-      let product = await this.webRepository.getProductById(id, user);
+      const product = await this.webRepository.getProductById(
+        id,
+        user,
+        body.store,
+      );
       if (!product) throw new NotFoundException('Produto não encontrado');
 
       product.isActive = body.isActive;
@@ -185,9 +191,9 @@ export class WebService {
     }
   }
 
-  async deleteItem(id: number, user: number): Promise<Product> {
+  async deleteItem(id: number, user: number, store: string): Promise<Product> {
     try {
-      let product = await this.webRepository.getProductById(id, user);
+      const product = await this.webRepository.getProductById(id, user, store);
       if (!product) throw new NotFoundException('Produto não encontrado');
 
       return await this.webRepository.removeProduct(product);
@@ -200,7 +206,7 @@ export class WebService {
     return Number.isNaN(number) || !Number.isFinite(number) || !number;
   }
 
-  private obfuscateString(str: string, qtd: number = 0): string {
+  private obfuscateString(str: string, qtd = 0): string {
     const len = str.length;
     if (len <= qtd) {
       return str;
