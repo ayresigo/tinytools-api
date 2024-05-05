@@ -67,10 +67,8 @@ export class WebhookService {
         status_code: 999,
         message: 'An error has occurred.',
       };
-      const priceReferences = await this.webService.getItems(
-        userKeys.userId,
-        store,
-      );
+      const priceReferences = await this.webService.getItems(userKeys.userId);
+      // console.log(priceReferences, 'aqui');
       // console.log(
       //   'priceReferences =>',
       //   priceReferences.find((ref) => ref.sku == `561028`),
@@ -94,6 +92,7 @@ export class WebhookService {
 
       for (const item of invoice['itemsArray']) {
         // console.log('item =>', item);
+
         const reference = priceReferences.find(
           (ref) => ref.sku === item.codigo && ref.isActive === true,
         );
@@ -109,13 +108,51 @@ export class WebhookService {
 
           // console.log(tempItem);
 
-          const x = await this.applicationFacade.addTempItem(
-            id,
-            item.id,
-            invoice['idNotaTmp'],
-            reference.price,
-            tempItem,
-          );
+          if (store === 'mercado' && reference.mercadoActive) {
+            const x = await this.applicationFacade.addTempItem(
+              id,
+              item.id,
+              invoice['idNotaTmp'],
+              reference.mercadoPrice,
+              tempItem,
+            );
+          } else if (store === 'shopee' && reference.shopeeActive) {
+            const x = await this.applicationFacade.addTempItem(
+              id,
+              item.id,
+              invoice['idNotaTmp'],
+              reference.shopeePrice,
+              tempItem,
+            );
+
+            console.log('caiu no shopee');
+          } else if (store === 'aliexpress' && reference.aliActive) {
+            const x = await this.applicationFacade.addTempItem(
+              id,
+              item.id,
+              invoice['idNotaTmp'],
+              reference.aliPrice,
+              tempItem,
+            );
+          } else if (store === 'shein' && reference.sheinActive) {
+            const x = await this.applicationFacade.addTempItem(
+              id,
+              item.id,
+              invoice['idNotaTmp'],
+              reference.sheinPrice,
+              tempItem,
+            );
+          } else {
+            const x = await this.applicationFacade.addTempItem(
+              id,
+              item.id,
+              invoice['idNotaTmp'],
+              reference.price,
+              tempItem,
+            );
+
+            console.log('caiu no else');
+          }
 
           // console.log('tempItem -', x);
 
@@ -150,7 +187,7 @@ export class WebhookService {
         status_code: 200,
         message: 'Nothing to be changed in invoice ' + id,
       };
-      console.log(result, 'Nothing to change');
+      console.log(result);
     } catch (e) {
       throw Error(e);
     }

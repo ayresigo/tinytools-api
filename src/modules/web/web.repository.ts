@@ -121,35 +121,70 @@ export class WebRepository {
     });
   }
 
-  async getProductsByUserId(id: number, store: string): Promise<Product[]> {
-    if (!store) {
-      return await this.productsRepository.find({
-        select: {
-          id: true,
-          isActive: true,
-          sku: true,
-          price: true,
-        },
-        where: {
-          user: id,
-        },
-        order: {
-          id: {
-            direction: 'asc',
-          },
-        },
-      });
-    }
+  async getProductsByUserId(id: number): Promise<Product[]> {
     return await this.productsRepository.find({
       select: {
         id: true,
         isActive: true,
         sku: true,
         price: true,
+        mercadoPrice: true,
+        mercadoActive: true,
+        sheinPrice: true,
+        sheinActive: true,
+        aliPrice: true,
+        aliActive: true,
+        shopeePrice: true,
+        shopeeActive: true,
       },
       where: {
         user: id,
-        store: store,
+      },
+      order: {
+        id: {
+          direction: 'asc',
+        },
+      },
+    });
+
+    // return await this.productsRepository.find({
+    //   select: {
+    //     id: true,
+    //     isActive: true,
+    //     sku: true,
+    //     price: true,
+    //   },
+    //   where: {
+    //     user: id,
+    //     store: store,
+    //   },
+    //   order: {
+    //     id: {
+    //       direction: 'asc',
+    //     },
+    //   },
+    // });
+  }
+
+  async getProductsByUserIdMercado(id: number): Promise<Product[]> {
+    return await this.productsRepository.find({
+      select: {
+        id: true,
+        isActive: true,
+        sku: true,
+        price: true,
+        mercadoPrice: true,
+        mercadoActive: true,
+        sheinPrice: true,
+        sheinActive: true,
+        aliPrice: true,
+        aliActive: true,
+        shopeePrice: true,
+        shopeeActive: true,
+      },
+      where: {
+        user: id,
+        mercadoActive: true,
       },
       order: {
         id: {
@@ -159,12 +194,67 @@ export class WebRepository {
     });
   }
 
-  async getProductById(id: number, user: number, store: string) {
+  async getProductsByUserIdShein(id: number): Promise<Product[]> {
+    return await this.productsRepository.find({
+      select: {
+        id: true,
+        isActive: true,
+        sku: true,
+        price: true,
+        mercadoPrice: true,
+        mercadoActive: true,
+        sheinPrice: true,
+        sheinActive: true,
+        aliPrice: true,
+        aliActive: true,
+        shopeePrice: true,
+        shopeeActive: true,
+      },
+      where: {
+        user: id,
+        sheinActive: true,
+      },
+      order: {
+        id: {
+          direction: 'asc',
+        },
+      },
+    });
+  }
+
+  async getProductsByUserIdAliexpress(id: number): Promise<Product[]> {
+    return await this.productsRepository.find({
+      select: {
+        id: true,
+        isActive: true,
+        sku: true,
+        price: true,
+        mercadoPrice: true,
+        mercadoActive: true,
+        sheinPrice: true,
+        sheinActive: true,
+        aliPrice: true,
+        aliActive: true,
+        shopeePrice: true,
+        shopeeActive: true,
+      },
+      where: {
+        user: id,
+        aliActive: true,
+      },
+      order: {
+        id: {
+          direction: 'asc',
+        },
+      },
+    });
+  }
+
+  async getProductById(id: number, user: number) {
     return await this.productsRepository.findOne({
       where: {
         user: user,
         id: id,
-        store: store,
       },
     });
   }

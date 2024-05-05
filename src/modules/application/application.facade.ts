@@ -55,7 +55,7 @@ export class ApplicationFacade {
 
     const result = this.mapObject(response, constants.INVOICE_ITEM_PREFIX);
 
-    console.log(response);
+    // console.log(response);
 
     if (response.response[0].src.includes('Sua sessão expirou')) {
       throw new UnauthorizedException('invalid cookie');

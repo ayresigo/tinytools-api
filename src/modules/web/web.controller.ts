@@ -67,15 +67,8 @@ export class WebController {
 
   @UseGuards(AuthGuard)
   @Get('getItems')
-  async getItems(
-    @Request() req,
-    @Query('store') store: string,
-  ): Promise<object> {
-    if (!store) {
-      console.log('here')
-      return this.webService.getItems(req.user.id, '');
-    }
-    return this.webService.getItems(req.user.id, store);
+  async getItems(@Request() req): Promise<object> {
+    return this.webService.getItems(req.user.id);
   }
 
   @UseGuards(AuthGuard)
@@ -98,11 +91,7 @@ export class WebController {
 
   @UseGuards(AuthGuard)
   @Delete('deleteItem')
-  async deleteItem(
-    @Request() req,
-    @Query('id') id: number,
-    @Query('store') store: string,
-  ): Promise<Product> {
-    return await this.webService.deleteItem(id, req.user.id, store);
+  async deleteItem(@Request() req, @Query('id') id: number): Promise<Product> {
+    return await this.webService.deleteItem(id, req.user.id);
   }
 }
