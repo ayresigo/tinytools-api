@@ -9,6 +9,16 @@ export class ProductDto {
       this.id = object.id;
       this.sku = object.sku;
       this.price = utils.floatToString(object.price);
+      this.mercadoPrice = utils.floatToString(object.mercadoPrice);
+      this.mercadoActive = object.mercadoActive;
+      this.sheinPrice = utils.floatToString(object.sheinPrice);
+      this.sheinActive = object.sheinActive;
+      this.aliPrice = utils.floatToString(object.aliPrice);
+      this.aliActive = object.aliActive;
+      this.shopeePrice = utils.floatToString(object.shopeePrice);
+      this.shopeeActive = object.shopeeActive;
+
+      // this.store = object.store;
       this.isActive = object.isActive;
     }
   }
@@ -29,4 +39,44 @@ export class ProductDto {
   @IsNotEmpty()
   @IsBoolean()
   isActive: boolean;
+
+  @ApiProperty()
+  @IsNotEmpty()
+  @IsString()
+  mercadoPrice: string;
+
+  @ApiProperty()
+  @IsNotEmpty()
+  @IsBoolean()
+  mercadoActive: boolean;
+
+  @ApiProperty()
+  @IsNotEmpty()
+  @IsString()
+  sheinPrice: string;
+
+  @ApiProperty()
+  @IsNotEmpty()
+  @IsBoolean()
+  sheinActive: boolean;
+
+  @ApiProperty()
+  @IsNotEmpty()
+  @IsString()
+  aliPrice: string;
+
+  @ApiProperty()
+  @IsNotEmpty()
+  @IsBoolean()
+  aliActive: boolean;
+
+  @ApiProperty()
+  @IsNotEmpty()
+  @IsString()
+  shopeePrice: string;
+
+  @ApiProperty()
+  @IsNotEmpty()
+  @IsBoolean()
+  shopeeActive: boolean;
 }

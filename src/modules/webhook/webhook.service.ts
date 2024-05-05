@@ -15,15 +15,19 @@ export class WebhookService {
     private readonly webService: WebService,
   ) {}
 
-  async testWebhook(id: string) {
+  async testWebhook(id: string, store: string) {
     const storeName = id.substring(0, 1) === '1' ? 'goldtech' : 'megatech';
     const userKeys = await this.webRepository.getApiKeyAndIdByName(storeName);
 
     const keys = new UserKeysDto(userKeys);
-    return await this.startRoutine(id, keys);
+    return await this.startRoutine(id, keys, store);
   }
 
-  async receiveCustomWebhook(body: object, storeName: string): Promise<object> {
+  async receiveCustomWebhook(
+    body: object,
+    storeName: string,
+    store: string,
+  ): Promise<object> {
     console.log(body);
     if (
       body.hasOwnProperty('dados') &&
@@ -37,14 +41,22 @@ export class WebhookService {
           storeName,
         );
         const keys = new UserKeysDto(userKeys);
-        return await this.startRoutine(body['dados']['idNotaFiscal'], keys);
+        return await this.startRoutine(
+          body['dados']['idNotaFiscal'],
+          keys,
+          store,
+        );
       }
 
       return { message: 'Tinytools is not active for ' + storeName };
     }
   }
 
-  async startRoutine(id: string, userKeys: UserKeysDto): Promise<object> {
+  async startRoutine(
+    id: string,
+    userKeys: UserKeysDto,
+    store: string,
+  ): Promise<object> {
     try {
       console.log('Starting routine for -', id);
       // eslint-disable-next-line no-var
@@ -56,35 +68,31 @@ export class WebhookService {
         message: 'An error has occurred.',
       };
       const priceReferences = await this.webService.getItems(userKeys.userId);
+      // console.log(priceReferences, 'aqui');
       // console.log(
       //   'priceReferences =>',
       //   priceReferences.find((ref) => ref.sku == `561028`),
       // );
-    
 
       // console.log(cookie, 'cookiee')
-      let invoice
+      let invoice;
 
       try {
-        invoice = await this.applicationFacade.searchInvoice(
-          id,
+        invoice = await this.applicationFacade.searchInvoice(id);
+      } catch (e) {
+        const cookie = await this.applicationFacade.getTinyCookieById(
+          userKeys.userId,
         );
-      } catch (e){
-            const cookie = await this.applicationFacade.getTinyCookieById(
-              userKeys.userId,
-            );
-        
-        invoice = await this.applicationFacade.searchInvoice(
-          id,
-        );
-        console.log(e)
+
+        invoice = await this.applicationFacade.searchInvoice(id);
+        console.log(e);
       }
-      
 
       let changedInvoice = false;
 
       for (const item of invoice['itemsArray']) {
         // console.log('item =>', item);
+
         const reference = priceReferences.find(
           (ref) => ref.sku === item.codigo && ref.isActive === true,
         );
@@ -100,13 +108,51 @@ export class WebhookService {
 
           // console.log(tempItem);
 
-          const x = await this.applicationFacade.addTempItem(
-            id,
-            item.id,
-            invoice['idNotaTmp'],
-            reference.price,
-            tempItem,
-          );
+          if (store === 'mercado' && reference.mercadoActive) {
+            const x = await this.applicationFacade.addTempItem(
+              id,
+              item.id,
+              invoice['idNotaTmp'],
+              reference.mercadoPrice,
+              tempItem,
+            );
+          } else if (store === 'shopee' && reference.shopeeActive) {
+            const x = await this.applicationFacade.addTempItem(
+              id,
+              item.id,
+              invoice['idNotaTmp'],
+              reference.shopeePrice,
+              tempItem,
+            );
+
+            console.log('caiu no shopee');
+          } else if (store === 'aliexpress' && reference.aliActive) {
+            const x = await this.applicationFacade.addTempItem(
+              id,
+              item.id,
+              invoice['idNotaTmp'],
+              reference.aliPrice,
+              tempItem,
+            );
+          } else if (store === 'shein' && reference.sheinActive) {
+            const x = await this.applicationFacade.addTempItem(
+              id,
+              item.id,
+              invoice['idNotaTmp'],
+              reference.sheinPrice,
+              tempItem,
+            );
+          } else {
+            const x = await this.applicationFacade.addTempItem(
+              id,
+              item.id,
+              invoice['idNotaTmp'],
+              reference.price,
+              tempItem,
+            );
+
+            console.log('caiu no else');
+          }
 
           // console.log('tempItem -', x);
 
@@ -115,19 +161,11 @@ export class WebhookService {
       }
 
       if (changedInvoice) {
-        await this.applicationFacade.addInvoice(
-          id,
-          new AddInvoiceDto(invoice),
-        );
+        await this.applicationFacade.addInvoice(id, new AddInvoiceDto(invoice));
 
-        invoice = await this.applicationFacade.searchInvoice(
-          id,
-        );
+        invoice = await this.applicationFacade.searchInvoice(id);
 
-        await this.applicationFacade.addInvoice(
-          id,
-          new AddInvoiceDto(invoice),
-        );
+        await this.applicationFacade.addInvoice(id, new AddInvoiceDto(invoice));
 
         await this.applicationFacade.sendInvoice(
           userKeys.apiKey,
@@ -149,7 +187,7 @@ export class WebhookService {
         status_code: 200,
         message: 'Nothing to be changed in invoice ' + id,
       };
-      console.log(result, 'Nothing to change');
+      console.log(result);
     } catch (e) {
       throw Error(e);
     }

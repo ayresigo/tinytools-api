@@ -113,7 +113,8 @@ export class WebService {
   async getItems(user: number): Promise<ProductDto[]> {
     try {
       // console.log('Getting items for user -', user);
-      let response = await this.webRepository.getProductsByUserId(user);
+      // console.log(user);
+      const response = await this.webRepository.getProductsByUserId(user);
       let result = [];
       response.forEach((element) => {
         result = [...result, new ProductDto(element, this.utils)];
@@ -143,6 +144,14 @@ export class WebService {
           sku: element.sku,
           price: this.utils.stringToFloat(element.price),
           isActive: element.isActive,
+          aliPrice: 0,
+          aliActive: false,
+          mercadoPrice: 0,
+          mercadoActive: false,
+          sheinPrice: 0,
+          sheinActive: false,
+          shopeePrice: 0,
+          shopeeActive: false,
           user: user,
         };
         let status;
@@ -150,7 +159,7 @@ export class WebService {
           if (this.isInvalidNumber(product.price))
             throw new UnprocessableEntityException();
 
-          let response = await this.webRepository.saveProduct(product);
+          const response = await this.webRepository.saveProduct(product);
           status = { [element.sku]: `Success (Id: ${response.id})` };
         } catch (e) {
           status = { [element.sku]: `Error (${e.message})` };
@@ -169,16 +178,32 @@ export class WebService {
     user: number,
   ): Promise<Product> {
     try {
-      let product = await this.webRepository.getProductById(id, user);
+      const product = await this.webRepository.getProductById(id, user);
       if (!product) throw new NotFoundException('Produto não encontrado');
 
       product.isActive = body.isActive;
       product.price = this.utils.stringToFloat(body.price);
+      product.mercadoActive = body.mercadoActive;
+      product.mercadoPrice = this.utils.stringToFloat(body.mercadoPrice);
+      product.sheinActive = body.sheinActive;
+      product.sheinPrice = this.utils.stringToFloat(body.sheinPrice);
+      product.aliActive = body.aliActive;
+      product.aliPrice = this.utils.stringToFloat(body.aliPrice);
+      product.shopeeActive = body.shopeeActive;
+      product.shopeePrice = this.utils.stringToFloat(body.shopeePrice);
       product.sku = body.sku;
 
-      if (this.isInvalidNumber(product.price))
-        throw new UnprocessableEntityException();
+      // console.log('here');
 
+      if (
+        this.isInvalidNumber(product.price) ||
+        this.isInvalidNumber(product.mercadoPrice) ||
+        this.isInvalidNumber(product.sheinPrice) ||
+        this.isInvalidNumber(product.aliPrice) ||
+        this.isInvalidNumber(product.shopeePrice)
+      ) {
+        throw new UnprocessableEntityException();
+      }
       return await this.webRepository.saveProduct(product);
     } catch (e) {
       throw new BadRequestException(e.message);
@@ -187,7 +212,7 @@ export class WebService {
 
   async deleteItem(id: number, user: number): Promise<Product> {
     try {
-      let product = await this.webRepository.getProductById(id, user);
+      const product = await this.webRepository.getProductById(id, user);
       if (!product) throw new NotFoundException('Produto não encontrado');
 
       return await this.webRepository.removeProduct(product);
@@ -197,10 +222,10 @@ export class WebService {
   }
 
   private isInvalidNumber(number): boolean {
-    return Number.isNaN(number) || !Number.isFinite(number) || !number;
+    return Number.isNaN(number) || !Number.isFinite(number);
   }
 
-  private obfuscateString(str: string, qtd: number = 0): string {
+  private obfuscateString(str: string, qtd = 0): string {
     const len = str.length;
     if (len <= qtd) {
       return str;
