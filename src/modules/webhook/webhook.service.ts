@@ -142,19 +142,7 @@ export class WebhookService {
               reference.sheinPrice,
               tempItem,
             );
-          } else {
-            const x = await this.applicationFacade.addTempItem(
-              id,
-              item.id,
-              invoice['idNotaTmp'],
-              reference.price,
-              tempItem,
-            );
-
-            console.log('caiu no else');
           }
-
-          // console.log('tempItem -', x);
 
           changedInvoice = true;
         }
