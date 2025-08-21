@@ -142,6 +142,14 @@ export class WebhookService {
               reference.sheinPrice,
               tempItem,
             );
+          } else if (store === 'tiktok' && reference.tiktokActive) {
+            const x = await this.applicationFacade.addTempItem(
+              id,
+              item.id,
+              invoice['idNotaTmp'],
+              reference.tiktokPrice,
+              tempItem,
+            );
           }
 
           changedInvoice = true;

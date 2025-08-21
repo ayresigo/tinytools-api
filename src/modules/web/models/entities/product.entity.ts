@@ -45,6 +45,13 @@ export class Product {
   @Column({ name: 'shopee_active', type: 'boolean' })
   shopeeActive: boolean;
 
+  @Column({ name: 'tiktok_price', type: 'float' })
+  @IsNumber()
+  tiktokPrice: number;
+
+  @Column({ name: 'tiktok_active', type: 'boolean' })
+  tiktokActive: boolean;
+
   @Column({ name: 'fk_users_id', type: 'integer' })
   user: number;
 }

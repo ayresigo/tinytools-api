@@ -152,6 +152,8 @@ export class WebService {
           sheinActive: element.isActive,
           shopeePrice: this.utils.stringToFloat(element.price),
           shopeeActive: element.isActive,
+          tiktokPrice: this.utils.stringToFloat(element.price),
+          tiktokActive: element.isActive,
           user: user,
         };
         let status;

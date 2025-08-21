@@ -17,6 +17,8 @@ export class ProductDto {
       this.aliActive = object.aliActive;
       this.shopeePrice = utils.floatToString(object.shopeePrice);
       this.shopeeActive = object.shopeeActive;
+      this.tiktokPrice = utils.floatToString(object.tiktokPrice);
+      this.tiktokActive = object.tiktokActive;
 
       // this.store = object.store;
       this.isActive = object.isActive;
@@ -79,4 +81,14 @@ export class ProductDto {
   @IsNotEmpty()
   @IsBoolean()
   shopeeActive: boolean;
+
+  @ApiProperty()
+  @IsNotEmpty()
+  @IsString()
+  tiktokPrice: string;
+
+  @ApiProperty()
+  @IsNotEmpty()
+  @IsBoolean()
+  tiktokActive: boolean;
 }

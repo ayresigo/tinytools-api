@@ -10,7 +10,8 @@ import { ConfigModule } from '@nestjs/config';
 import { TypeOrmConfigService } from './database/database.providers';
 import { AuthModule } from './modules/auth/auth.module';
 
-const envFilePath: string = getEnvPath(`${__dirname}/envs`);
+const envFilePath: string = getEnvPath(`${__dirname}/..`);
+console.log('Environment file path:', envFilePath);
 @Module({
   imports: [
     AuthModule,
