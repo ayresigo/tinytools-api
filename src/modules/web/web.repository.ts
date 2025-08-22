@@ -136,6 +136,8 @@ export class WebRepository {
         aliActive: true,
         shopeePrice: true,
         shopeeActive: true,
+        tiktokPrice: true,
+        tiktokActive: true,
       },
       where: {
         user: id,
