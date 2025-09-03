@@ -193,6 +193,8 @@ export class WebService {
       product.aliPrice = this.utils.stringToFloat(body.aliPrice);
       product.shopeeActive = body.shopeeActive;
       product.shopeePrice = this.utils.stringToFloat(body.shopeePrice);
+      product.tiktokActive = body.tiktokActive;
+      product.tiktokPrice = this.utils.stringToFloat(body.tiktokPrice);
       product.sku = body.sku;
 
       // console.log('here');
@@ -202,7 +204,8 @@ export class WebService {
         this.isInvalidNumber(product.mercadoPrice) ||
         this.isInvalidNumber(product.sheinPrice) ||
         this.isInvalidNumber(product.aliPrice) ||
-        this.isInvalidNumber(product.shopeePrice)
+        this.isInvalidNumber(product.shopeePrice) ||
+        this.isInvalidNumber(product.tiktokPrice)
       ) {
         throw new UnprocessableEntityException();
       }
