@@ -1,8 +1,8 @@
 import { ApiProperty } from '@nestjs/swagger';
 
 export class AddInvoiceDto {
-  constructor(object) {
-    for (let prop in object) {
+  constructor(object, crt: string = '1') {
+    for (const prop in object) {
       if (object.hasOwnProperty(prop)) {
         if (prop == 'view-info-nota-fiscal' || prop == 'obs_cliente') continue;
         if (object[prop] == null) this[prop] = '';
@@ -25,6 +25,22 @@ export class AddInvoiceDto {
     this.contOperacao = '';
     this.detalhar_desoneracao = '';
     this.ecommerceAdicionais = '';
+
+    // test
+    this.consumidorFinal = 'S';
+    this.crt = crt;
+    this.finalidade = '1';
+
+    this.tipoDesconto = '';
+    this.valorPagamentoIntegrado = '';
+    this.pagamentosIntegrados = '[]';
+    this['meio-pagamento-integrado'] = '0';
+    this.desabilitouManualmenteRepasseJuros = 'N';
+    this.codigoBandeiraPagamentoIntegrado = '';
+    this.codigoAutorizacaoPagamentoIntegrado = '';
+    this.cnpjIntermediadorPagamentoIntegrado = '';
+    //
+
     this.enderecoAlternativo = {
       bairro: '',
       cep: '',
@@ -42,8 +58,10 @@ export class AddInvoiceDto {
       tipoPessoa: 'F',
       uf: ' ',
     };
+    this.ufEmpresa = 'RJ';
     this.faturada = '';
     this.hashAlterarLotes = '';
+    this.percentualICMSFCPDestino = '0,00';
     this.idDest = '0';
     this.idEntrega = '';
     this.idLinhaProduto = '';
@@ -120,6 +138,22 @@ export class AddInvoiceDto {
   chaveAcesso: string;
   @ApiProperty()
   cnpj: string;
+  @ApiProperty()
+  valorPagamentoIntegrado: string;
+  @ApiProperty()
+  pagamentosIntegrados: string;
+  @ApiProperty()
+  'meio-pagamento-integrado': string;
+  @ApiProperty()
+  ufEmpresa: string;
+  @ApiProperty()
+  desabilitouManualmenteRepasseJuros: string;
+  @ApiProperty()
+  codigoBandeiraPagamentoIntegrado: string;
+  @ApiProperty()
+  codigoAutorizacaoPagamentoIntegrado: string;
+  @ApiProperty()
+  cnpjIntermediadorPagamentoIntegrado: string;
   @ApiProperty()
   cnpjTransportador: string;
   @ApiProperty()
@@ -456,6 +490,8 @@ export class AddInvoiceDto {
   valorTotalFCPSTRet: string;
   @ApiProperty()
   valorTotalICMSFCPDestino: string;
+  @ApiProperty()
+  percentualICMSFCPDestino: string;
   @ApiProperty()
   valorTotalICMSPartilhaDestino: string;
   @ApiProperty()

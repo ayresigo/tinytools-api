@@ -12,9 +12,9 @@ export class TypeOrmConfigService implements TypeOrmOptionsFactory {
     const port = this.config.get<number>('DATABASE_PORT');
     const database = this.config.get<string>('DATABASE_NAME');
     const username = this.config.get<string>('DATABASE_USER');
-    
+
     console.log('Database config:', { host, port, database, username });
-    
+
     return {
       type: 'postgres',
       host,

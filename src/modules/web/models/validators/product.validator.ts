@@ -1,4 +1,8 @@
-import { ValidatorConstraint, ValidatorConstraintInterface, ValidationArguments } from 'class-validator';
+import {
+  ValidatorConstraint,
+  ValidatorConstraintInterface,
+  ValidationArguments,
+} from 'class-validator';
 import { getRepository } from 'typeorm';
 import { Product } from '../entities/product.entity';
 

@@ -18,7 +18,7 @@ export class Utils {
 
   stringToFloat(string: string): number {
     try {
-      let result = parseFloat(string.replace(',', '.'));
+      const result = parseFloat(string.replace(',', '.'));
       return result;
     } catch (e) {
       throw new BadRequestException(e.message);

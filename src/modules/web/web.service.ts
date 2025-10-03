@@ -61,8 +61,8 @@ export class WebService {
 
   async getUserKeys(user: number): Promise<object> {
     try {
-      let apiKey = await this.webRepository.getApiKeyByUserId(user);
-      let tinyAccount = await this.webRepository.getTinyKeysByUserId(user);
+      const apiKey = await this.webRepository.getApiKeyByUserId(user);
+      const tinyAccount = await this.webRepository.getTinyKeysByUserId(user);
 
       return {
         apiKey: apiKey['apiKey'],
@@ -84,7 +84,7 @@ export class WebService {
 
   async updateBotIsActive(isActive: boolean, id: number): Promise<object> {
     try {
-      var user = await this.webRepository.getUserById(id);
+      const user = await this.webRepository.getUserById(id);
       user.botIsActive = isActive;
 
       return await this.webRepository.saveUser(user);
@@ -95,7 +95,7 @@ export class WebService {
 
   async getObfuscatedUserKeys(user: number): Promise<object> {
     try {
-      let response = await this.getUserKeys(user);
+      const response = await this.getUserKeys(user);
       const obfuscatedApiKey = this.obfuscateString(response['apiKey'], 5);
       // const obfuscatedLogin = this.obfuscateString(response['tinyLogin']);
       const obfuscatedLogin = response['tinyLogin'];

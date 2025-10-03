@@ -24,7 +24,7 @@ export class ApplicationService {
       const setCookieResponse = response.headers['set-cookie'];
       return { response, dynamicUrl, setCookieResponse };
     } catch (e) {
-      throw Error(e)
+      throw Error(e);
     }
   }
 
@@ -114,7 +114,8 @@ export class ApplicationService {
 
       const headers = {
         'x-custom-request-for': 'XAJAX',
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:121.0) Gecko/20100101 Firefox/121.0'
+        'User-Agent':
+          'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:121.0) Gecko/20100101 Firefox/121.0',
       };
 
       // eslint-disable-next-line no-var
@@ -158,7 +159,8 @@ export class ApplicationService {
           }",${JSON.stringify(params['tempItem'])},"E"]`;
           break;
         case constants.ADD_INVOICE_FUNC:
-          const invoice = new AddInvoiceDto(params['invoice']);
+          const invoice = new AddInvoiceDto(params['invoice'], '1');
+          console.log('invoice', JSON.stringify(params['invoice']));
           args =
             `["${params['invoiceId']}",` +
             `${JSON.stringify(invoice)},` +
@@ -166,7 +168,14 @@ export class ApplicationService {
             `true,[],"S"]`;
           break;
         case constants.CALC_TAXES_FUNC:
-          args = `[-1,"I","${params['tempInvoiceId']}"]`;
+          args = `[-1,"I","${params['tempInvoiceId']}", null, null, null]`;
+          break;
+        case constants.UPDATE_ITEMS_OPERATION_FUNC:
+          args = `["${params['tempInvoiceId']}","${params['operationId']}","${params['operationName']}","S","${params['operationId']}",null,"0"]`;
+          console.log(args, '<= args');
+          break;
+        case constants.UPDATE_INVOICE_FIELD_FUNC:
+          args = `["${params['tempInvoiceId']}","${params['fieldName']}","${params['fieldValue']}",null]`;
           break;
       }
 

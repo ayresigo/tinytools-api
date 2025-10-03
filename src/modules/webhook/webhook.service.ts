@@ -15,12 +15,27 @@ export class WebhookService {
     private readonly webService: WebService,
   ) {}
 
+  private getCrtByStore(storeName: string): string {
+    // Define CRT values based on store/account
+    // CRT 1 = Lucro Presumido/Real, CRT 3 = Simples Nacional
+    const crtMap: { [key: string]: string } = {
+      'goldtech': '1',    // Lucro Presumido/Real
+      'megatech': '3',    // Simples Nacional
+    };
+
+    return crtMap[storeName] || '1'; // Default to '1' if store not found
+  }
+
   async testWebhook(id: string, store: string) {
     const storeName = id.substring(0, 1) === '1' ? 'goldtech' : 'megatech';
     const userKeys = await this.webRepository.getApiKeyAndIdByName(storeName);
 
     const keys = new UserKeysDto(userKeys);
-    return await this.startRoutine(id, keys, store);
+
+    // Determine CRT based on store/account
+    const crt = this.getCrtByStore(storeName);
+
+    return await this.startRoutine(id, keys, store, crt);
   }
 
   async receiveCustomWebhook(
@@ -41,10 +56,15 @@ export class WebhookService {
           storeName,
         );
         const keys = new UserKeysDto(userKeys);
+
+        // Determine CRT based on store/account
+        const crt = this.getCrtByStore(storeName);
+
         return await this.startRoutine(
           body['dados']['idNotaFiscal'],
           keys,
           store,
+          crt,
         );
       }
 
@@ -56,6 +76,7 @@ export class WebhookService {
     id: string,
     userKeys: UserKeysDto,
     store: string,
+    crt: string,
   ): Promise<object> {
     try {
       console.log('Starting routine for -', id);
@@ -156,12 +177,37 @@ export class WebhookService {
         }
       }
 
-      if (changedInvoice) {
-        await this.applicationFacade.addInvoice(id, new AddInvoiceDto(invoice));
+      console.log(changedInvoice, '<= changedInvoice');
+
+      if (true) {
+        // Update items operation (Natureza da Operacao)
+        const updateItemsOperation =
+          await this.applicationFacade.updateItemsOperation(
+            id,
+            invoice['idNotaTmp'],
+            invoice['idTipoNota'],
+            invoice['natureza'],
+          );
+
+        console.log(updateItemsOperation, '<= updateItemsOperation');
+
+        console.log('About to save invoice with ICMS values:', {
+          valorProdutos: invoice.valorProdutos,
+          baseICMS: invoice.baseICMS,
+          valorICMS: invoice.valorICMS,
+          valorTotalFCP: invoice.valorTotalFCP,
+          valorTotalICMSFCPDestino: invoice.valorTotalICMSFCPDestino,
+          percentualICMSFCPDestino: invoice.percentualICMSFCPDestino,
+          valorTotalICMSPartilhaDestino: invoice.valorTotalICMSPartilhaDestino,
+          valorTotalICMSPartilhaOrigem: invoice.valorTotalICMSPartilhaOrigem,
+          percentualICMSPartilhaDestino: invoice.percentualICMSPartilhaDestino,
+        });
+
+        await this.applicationFacade.addInvoice(id, new AddInvoiceDto(invoice, crt));
 
         invoice = await this.applicationFacade.searchInvoice(id);
 
-        await this.applicationFacade.addInvoice(id, new AddInvoiceDto(invoice));
+        await this.applicationFacade.addInvoice(id, new AddInvoiceDto(invoice, crt));
 
         await this.applicationFacade.sendInvoice(
           userKeys.apiKey,
