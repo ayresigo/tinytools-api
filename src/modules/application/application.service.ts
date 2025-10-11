@@ -159,7 +159,7 @@ export class ApplicationService {
           }",${JSON.stringify(params['tempItem'])},"E"]`;
           break;
         case constants.ADD_INVOICE_FUNC:
-          const invoice = new AddInvoiceDto(params['invoice'], '1');
+          const invoice = params['invoice'];
           console.log('invoice', JSON.stringify(params['invoice']));
           args =
             `["${params['invoiceId']}",` +

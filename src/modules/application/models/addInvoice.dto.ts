@@ -1,7 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
 
 export class AddInvoiceDto {
-  constructor(object, crt: string = '1') {
+  constructor(object, crt: number = 1) {
     for (const prop in object) {
       if (object.hasOwnProperty(prop)) {
         if (prop == 'view-info-nota-fiscal' || prop == 'obs_cliente') continue;
@@ -167,7 +167,7 @@ export class AddInvoiceDto {
   @ApiProperty()
   contOperacao: string;
   @ApiProperty()
-  crt: string;
+  crt: number;
   @ApiProperty()
   custoAtualizado: string;
   @ApiProperty()

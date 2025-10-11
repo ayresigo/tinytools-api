@@ -15,15 +15,15 @@ export class WebhookService {
     private readonly webService: WebService,
   ) {}
 
-  private getCrtByStore(storeName: string): string {
+  private getCrtByStore(storeName: string): number {
     // Define CRT values based on store/account
     // CRT 1 = Lucro Presumido/Real, CRT 3 = Simples Nacional
-    const crtMap: { [key: string]: string } = {
-      'goldtech': '1',    // Lucro Presumido/Real
-      'megatech': '3',    // Simples Nacional
+    const crtMap: { [key: string]: number } = {
+      'goldtech': 3,    // Lucro Presumido/Real
+      'megatech': 1,    // Simples Nacional
     };
 
-    return crtMap[storeName] || '1'; // Default to '1' if store not found
+    return crtMap[storeName] || 1; // Default to '1' if store not found
   }
 
   async testWebhook(id: string, store: string) {
@@ -59,6 +59,7 @@ export class WebhookService {
 
         // Determine CRT based on store/account
         const crt = this.getCrtByStore(storeName);
+        console.log(crt, 'crt');
 
         return await this.startRoutine(
           body['dados']['idNotaFiscal'],
@@ -76,7 +77,7 @@ export class WebhookService {
     id: string,
     userKeys: UserKeysDto,
     store: string,
-    crt: string,
+    crt: number,
   ): Promise<object> {
     try {
       console.log('Starting routine for -', id);
@@ -208,6 +209,8 @@ export class WebhookService {
         invoice = await this.applicationFacade.searchInvoice(id);
 
         await this.applicationFacade.addInvoice(id, new AddInvoiceDto(invoice, crt));
+
+        // console.log(new AddInvoiceDto(invoice, crt), 'invoice invoice invoice');
 
         await this.applicationFacade.sendInvoice(
           userKeys.apiKey,
