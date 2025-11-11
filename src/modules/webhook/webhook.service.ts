@@ -1,4 +1,4 @@
-import { Inject, Injectable, UnauthorizedException } from '@nestjs/common';
+import { BadRequestException, Inject, Injectable, UnauthorizedException } from '@nestjs/common';
 import { ApplicationFacade } from '../application/application.facade';
 import { WebRepository } from '../web/web.repository';
 import { AddInvoiceDto } from '../application/models/addInvoice.dto';
@@ -234,7 +234,16 @@ export class WebhookService {
       };
       console.log(result);
     } catch (e) {
-      throw Error(e);
+      // Preserve the original error if it's already a NestJS exception (BadRequestException, UnauthorizedException, etc.)
+      if (e instanceof BadRequestException || e instanceof UnauthorizedException) {
+        throw e;
+      }
+      // If it's an Error with a message about redirects, convert it to BadRequestException
+      if (e instanceof Error && e.message?.includes('Maximum number of redirects exceeded')) {
+        throw new BadRequestException('Maximum number of redirects exceeded');
+      }
+      // Otherwise, wrap it properly
+      throw new Error(e.message || 'An unexpected error occurred');
     }
   }
 }

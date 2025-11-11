@@ -228,6 +228,9 @@ export class ApplicationFacade {
 
   async getTinyCookie(login: string, password: string): Promise<object> {
     console.log('Starting to get tiny cookie');
+    
+    // Clear any stale cookies before starting fresh authentication
+    await this.applicationService.clearCookies();
 
     const aLogin = await this.applicationService.sendXRequest({
       login,

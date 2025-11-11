@@ -7,7 +7,15 @@ import * as cheerio from 'cheerio';
 import { wrapper } from 'axios-cookiejar-support';
 
 const jar = new CookieJar();
-const client = wrapper(axios.create({ jar }));
+const client = wrapper(
+  axios.create({
+    jar,
+    maxRedirects: 5, // Prevent infinite redirect loops
+    timeout: 30000, // 30 second timeout for requests
+    // DNS lookup timeout (Node.js default is usually 4-5 seconds)
+    // This helps prevent hanging on DNS resolution failures
+  }),
+);
 
 @Injectable()
 export class ApplicationService {
@@ -24,7 +32,19 @@ export class ApplicationService {
       const setCookieResponse = response.headers['set-cookie'];
       return { response, dynamicUrl, setCookieResponse };
     } catch (e) {
-      throw Error(e);
+      // Check if it's a redirect loop error
+      if (
+        e.message?.includes('Maximum number of redirects exceeded') ||
+        e.message?.includes('redirect') ||
+        e.message?.includes('Redirect')
+      ) {
+        console.log('Redirect loop detected in sendXRequest, clearing cookies');
+        await this.clearCookies();
+        throw new BadRequestException(
+          'Authentication failed: Too many redirects. Session may be invalid. Please try again.',
+        );
+      }
+      throw new BadRequestException(e.message || 'Failed to initiate login');
     }
   }
 
@@ -51,6 +71,7 @@ export class ApplicationService {
           'Accept-Encoding': 'gzip, deflate, br',
           'Content-Type': 'application/x-www-form-urlencoded',
         },
+        maxRedirects: 5, // Explicitly set redirect limit
       });
 
       if (response.data?.retorno?.codigo_erro) {
@@ -67,12 +88,54 @@ export class ApplicationService {
         code: responseX.get('code'),
       };
     } catch (e) {
-      throw new BadRequestException(e.message);
+      // Check if it's a redirect loop error
+      if (
+        e.message?.includes('Maximum number of redirects exceeded') ||
+        e.message?.includes('redirect') ||
+        e.message?.includes('Redirect')
+      ) {
+        console.log('Redirect loop detected in sendYRequest, clearing cookies');
+        await this.clearCookies();
+        throw new BadRequestException(
+          'Authentication failed: Too many redirects during login. Session may be invalid. Please try again.',
+        );
+      }
+      throw new BadRequestException(e.message || 'Failed to authenticate');
+    }
+  }
+
+  async clearCookies() {
+    // Clear all cookies from the jar to prevent stale cookies causing redirect loops
+    try {
+      const cookies = await jar.getCookies('https://erp.tiny.com.br/');
+      if (cookies && cookies.length > 0) {
+        console.log(`Clearing ${cookies.length} cookie(s) from jar`);
+        for (const cookie of cookies) {
+          try {
+            await jar.removeCookies(
+              cookie.key,
+              cookie.domain || 'erp.tiny.com.br',
+              cookie.path || '/',
+            );
+          } catch (cookieError) {
+            console.log(
+              `Error removing cookie ${cookie.key}:`,
+              cookieError.message,
+            );
+          }
+        }
+      }
+    } catch (e) {
+      console.log('Error clearing cookies:', e.message);
+      // Continue execution even if clearing fails
     }
   }
 
   async handleCookie(response: AxiosResponse) {
     const pattern = /TINYSESSID=([^;]+)/;
+    // Clear old cookies before setting new ones to prevent stale cookies
+    await this.clearCookies();
+    
     for (const item of response.headers[`set-cookie`]) {
       const match = item.match(pattern);
       if (match) {
@@ -87,21 +150,50 @@ export class ApplicationService {
   }
 
   async sendARequest(endpoint: string, params: object, apiKey: string) {
-    try {
-      const url = `${constants.PROVIDED_BASE_URL}${endpoint}`;
-      const paramters = {
-        token: apiKey,
-        formato: 'json',
-        ...params,
-      };
-      const response = await client.get(url, { params: paramters });
+    const maxRetries = 3;
+    const retryDelay = 1000; // 1 second delay between retries
+    
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        const url = `${constants.PROVIDED_BASE_URL}${endpoint}`;
+        const paramters = {
+          token: apiKey,
+          formato: 'json',
+          ...params,
+        };
+        const response = await client.get(url, { params: paramters });
 
-      if (response.data.retorno.codigo_erro)
-        throw new BadRequestException(response.data.retorno.erros[0].erro);
+        if (response.data.retorno.codigo_erro)
+          throw new BadRequestException(response.data.retorno.erros[0].erro);
 
-      return response.data;
-    } catch (e) {
-      throw new BadRequestException(e.message);
+        return response.data;
+      } catch (e) {
+        const isDnsError = 
+          e.code === 'EAI_AGAIN' || 
+          e.code === 'ENOTFOUND' ||
+          e.message?.includes('getaddrinfo') ||
+          e.message?.includes('EAI_AGAIN');
+        
+        if (isDnsError && attempt < maxRetries) {
+          console.log(
+            `DNS resolution failed for ${constants.PROVIDED_BASE_URL}${endpoint}, ` +
+            `retrying (attempt ${attempt}/${maxRetries})...`
+          );
+          await new Promise(resolve => setTimeout(resolve, retryDelay * attempt));
+          continue;
+        }
+        
+        // If it's a DNS error on final attempt, provide a more helpful error message
+        if (isDnsError) {
+          throw new BadRequestException(
+            `DNS resolution failed for api.tiny.com.br after ${maxRetries} attempts. ` +
+            `This may be due to network connectivity issues or DNS server problems. ` +
+            `Original error: ${e.message}`
+          );
+        }
+        
+        throw new BadRequestException(e.message);
+      }
     }
   }
 
@@ -121,11 +213,24 @@ export class ApplicationService {
       // eslint-disable-next-line no-var
       var response = await client.post(url, querystring.stringify(data), {
         headers,
+        maxRedirects: 5, // Explicitly set redirect limit
       });
 
       // response.request
     } catch (e) {
       console.log('sendBRequest catch', e);
+      // Check if it's a redirect loop error
+      if (
+        e.message?.includes('Maximum number of redirects exceeded') ||
+        e.message?.includes('redirect') ||
+        e.message?.includes('Redirect')
+      ) {
+        console.log('Redirect loop detected, clearing cookies');
+        await this.clearCookies();
+        throw new BadRequestException(
+          'Session expired or invalid. Please refresh authentication.',
+        );
+      }
       throw new BadRequestException(e.message);
     }
 
