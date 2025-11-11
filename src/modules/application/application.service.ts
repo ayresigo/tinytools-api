@@ -110,20 +110,8 @@ export class ApplicationService {
       const cookies = await jar.getCookies('https://erp.tiny.com.br/');
       if (cookies && cookies.length > 0) {
         console.log(`Clearing ${cookies.length} cookie(s) from jar`);
-        for (const cookie of cookies) {
-          try {
-            await jar.removeCookies(
-              cookie.key,
-              cookie.domain || 'erp.tiny.com.br',
-              cookie.path || '/',
-            );
-          } catch (cookieError) {
-            console.log(
-              `Error removing cookie ${cookie.key}:`,
-              cookieError.message,
-            );
-          }
-        }
+        // Use removeAllCookies() to clear all cookies at once
+        await jar.removeAllCookies();
       }
     } catch (e) {
       console.log('Error clearing cookies:', e.message);
