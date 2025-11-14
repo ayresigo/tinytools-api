@@ -101,18 +101,15 @@ export class WebhookService {
       try {
         invoice = await this.applicationFacade.searchInvoice(id, userKeys.userId);
       } catch (e) {
-        // If invoice is not found, don't try to refresh cookie - just re-throw
-        if (e instanceof NotFoundException) {
-          throw e;
-        }
-        
-        // For other errors (like auth errors), try refreshing the cookie
+        // Always try to refresh cookie on first failure
+        // (could be auth error or empty cookie jar from per-user refactoring)
+        console.log('First searchInvoice attempt failed, refreshing cookie:', e.message || e);
         const cookie = await this.applicationFacade.getTinyCookieById(
           userKeys.userId,
         );
 
+        // Second attempt - if this fails with NotFoundException, the invoice genuinely doesn't exist
         invoice = await this.applicationFacade.searchInvoice(id, userKeys.userId);
-        console.log(e);
       }
 
       let changedInvoice = false;
