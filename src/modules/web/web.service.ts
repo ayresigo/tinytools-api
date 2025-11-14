@@ -43,7 +43,7 @@ export class WebService {
 
   async updateTinyAccount(username: string, password: string, user: number) {
     try {
-      await this.applicationFacade.getTinyCookie(username, password); // Tenta logar na conta.
+      await this.applicationFacade.getTinyCookie(username, password, user); // Tenta logar na conta.
     } catch (e) {
       throw new UnauthorizedException(e.message);
     }

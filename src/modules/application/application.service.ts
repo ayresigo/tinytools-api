@@ -5,22 +5,55 @@ import { constants } from 'src/utils/constants';
 import { AddInvoiceDto } from './models/addInvoice.dto';
 import * as cheerio from 'cheerio';
 import { wrapper } from 'axios-cookiejar-support';
+import * as http from 'http';
+import * as https from 'https';
 
-const jar = new CookieJar();
-const client = wrapper(
-  axios.create({
-    jar,
-    maxRedirects: 5, // Prevent infinite redirect loops
-    timeout: 30000, // 30 second timeout for requests
-    // DNS lookup timeout (Node.js default is usually 4-5 seconds)
-    // This helps prevent hanging on DNS resolution failures
-  }),
-);
+// Custom HTTP/HTTPS agents that force IPv4 resolution
+// This helps fix DNS issues in Alpine Linux containers
+const httpAgent = new http.Agent({
+  family: 4, // Force IPv4
+  keepAlive: true,
+  keepAliveMsecs: 1000,
+  timeout: 30000,
+});
+
+const httpsAgent = new https.Agent({
+  family: 4, // Force IPv4
+  keepAlive: true,
+  keepAliveMsecs: 1000,
+  timeout: 30000,
+});
 
 @Injectable()
 export class ApplicationService {
+  // Per-user cookie jars to prevent session conflicts between goldtech and megatech
+  // Key: userId (number), Value: { jar: CookieJar, client: AxiosInstance }
+  private userClients: Map<number, { jar: CookieJar; client: any }> = new Map();
+
+  /**
+   * Get or create a client for a specific user
+   * Each user gets their own cookie jar to prevent authentication conflicts
+   */
+  private getClientForUser(userId: number) {
+    if (!this.userClients.has(userId)) {
+      console.log(`Creating new cookie jar for user ${userId}`);
+      const jar = new CookieJar();
+      const client = wrapper(
+        axios.create({
+          jar,
+          maxRedirects: 5,
+          timeout: 30000,
+          httpAgent: httpAgent,
+          httpsAgent: httpsAgent,
+        }),
+      );
+      this.userClients.set(userId, { jar, client });
+    }
+    return this.userClients.get(userId);
+  }
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  async sendXRequest(params: object) {
+  async sendXRequest(params: object, userId: number) {
+    const { client } = this.getClientForUser(userId);
     try {
       // console.log('Starting to send XRequest for login');
       const url =
@@ -39,7 +72,7 @@ export class ApplicationService {
         e.message?.includes('Redirect')
       ) {
         console.log('Redirect loop detected in sendXRequest, clearing cookies');
-        await this.clearCookies();
+        await this.clearCookies(userId);
         throw new BadRequestException(
           'Authentication failed: Too many redirects. Session may be invalid. Please try again.',
         );
@@ -53,6 +86,7 @@ export class ApplicationService {
     username: string,
     password: string,
     setCookieResponse: string[],
+    userId: number,
   ) {
     try {
       // console.log('Starting to send YRequest for login');
@@ -84,7 +118,7 @@ export class ApplicationService {
       // console.log('nowee', response)
 
       return {
-        tinyCookie: await this.handleCookie(response),
+        tinyCookie: await this.handleCookie(response, userId),
         code: responseX.get('code'),
       };
     } catch (e) {
@@ -95,7 +129,7 @@ export class ApplicationService {
         e.message?.includes('Redirect')
       ) {
         console.log('Redirect loop detected in sendYRequest, clearing cookies');
-        await this.clearCookies();
+        await this.clearCookies(userId);
         throw new BadRequestException(
           'Authentication failed: Too many redirects during login. Session may be invalid. Please try again.',
         );
@@ -104,12 +138,16 @@ export class ApplicationService {
     }
   }
 
-  async clearCookies() {
+  async clearCookies(userId: number) {
     // Clear all cookies from the jar to prevent stale cookies causing redirect loops
+    const userClient = this.getClientForUser(userId);
+    if (!userClient) return;
+
+    const { jar } = userClient;
     try {
       const cookies = await jar.getCookies('https://erp.tiny.com.br/');
       if (cookies && cookies.length > 0) {
-        console.log(`Clearing ${cookies.length} cookie(s) from jar`);
+        console.log(`Clearing ${cookies.length} cookie(s) from jar for user ${userId}`);
         // Use removeAllCookies() to clear all cookies at once
         await jar.removeAllCookies();
       }
@@ -119,11 +157,14 @@ export class ApplicationService {
     }
   }
 
-  async handleCookie(response: AxiosResponse) {
+  async handleCookie(response: AxiosResponse, userId: number) {
     const pattern = /TINYSESSID=([^;]+)/;
+    const userClient = this.getClientForUser(userId);
+    const { jar } = userClient;
+
     // Clear old cookies before setting new ones to prevent stale cookies
-    await this.clearCookies();
-    
+    await this.clearCookies(userId);
+
     for (const item of response.headers[`set-cookie`]) {
       const match = item.match(pattern);
       if (match) {
@@ -138,9 +179,16 @@ export class ApplicationService {
   }
 
   async sendARequest(endpoint: string, params: object, apiKey: string) {
-    const maxRetries = 3;
-    const retryDelay = 1000; // 1 second delay between retries
-    
+    const maxRetries = 5; // Increased from 3 to 5
+    const retryDelay = 2000; // Increased from 1s to 2s for DNS propagation
+
+    // For API calls, we can use a shared axios instance (no cookies needed)
+    const apiClient = axios.create({
+      httpAgent: httpAgent,
+      httpsAgent: httpsAgent,
+      timeout: 60000,
+    });
+
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
       try {
         const url = `${constants.PROVIDED_BASE_URL}${endpoint}`;
@@ -149,43 +197,51 @@ export class ApplicationService {
           formato: 'json',
           ...params,
         };
-        const response = await client.get(url, { params: paramters });
+        const response = await apiClient.get(url, {
+          params: paramters,
+          timeout: 60000, // Increased timeout to 60 seconds for slow DNS
+        });
 
         if (response.data.retorno.codigo_erro)
           throw new BadRequestException(response.data.retorno.erros[0].erro);
 
         return response.data;
       } catch (e) {
-        const isDnsError = 
-          e.code === 'EAI_AGAIN' || 
+        const isDnsError =
+          e.code === 'EAI_AGAIN' ||
           e.code === 'ENOTFOUND' ||
+          e.code === 'ETIMEDOUT' ||
           e.message?.includes('getaddrinfo') ||
-          e.message?.includes('EAI_AGAIN');
-        
+          e.message?.includes('EAI_AGAIN') ||
+          e.message?.includes('ETIMEDOUT');
+
         if (isDnsError && attempt < maxRetries) {
+          const waitTime = retryDelay * attempt; // Exponential backoff
           console.log(
             `DNS resolution failed for ${constants.PROVIDED_BASE_URL}${endpoint}, ` +
-            `retrying (attempt ${attempt}/${maxRetries})...`
+            `retrying in ${waitTime}ms (attempt ${attempt}/${maxRetries})...`
           );
-          await new Promise(resolve => setTimeout(resolve, retryDelay * attempt));
+          await new Promise(resolve => setTimeout(resolve, waitTime));
           continue;
         }
-        
+
         // If it's a DNS error on final attempt, provide a more helpful error message
         if (isDnsError) {
           throw new BadRequestException(
             `DNS resolution failed for api.tiny.com.br after ${maxRetries} attempts. ` +
             `This may be due to network connectivity issues or DNS server problems. ` +
+            `Please check your VPS/container DNS settings. ` +
             `Original error: ${e.message}`
           );
         }
-        
+
         throw new BadRequestException(e.message);
       }
     }
   }
 
-  async sendBRequest(params: object, endpoint: string) {
+  async sendBRequest(params: object, endpoint: string, userId: number) {
+    const { client } = this.getClientForUser(userId);
     try {
       // eslint-disable-next-line @typescript-eslint/no-var-requires
       const querystring = require('querystring');
@@ -214,7 +270,7 @@ export class ApplicationService {
         e.message?.includes('Redirect')
       ) {
         console.log('Redirect loop detected, clearing cookies');
-        await this.clearCookies();
+        await this.clearCookies(userId);
         throw new BadRequestException(
           'Session expired or invalid. Please refresh authentication.',
         );
@@ -230,7 +286,7 @@ export class ApplicationService {
         // console.log('AUTH ERROR RESOPNSE BODY LEMAS CHECK');
         // Obtendo cookie de autênticação:
         // Como o método principal retorna response.data e o cookie de sessão vem via header, precisamos retornar ele aqui nesse momento.
-        return this.handleCookie(response);
+        return this.handleCookie(response, userId);
       }
 
     return response.data;

@@ -43,7 +43,7 @@ export class ApplicationFacade {
     throw new BadRequestException('Sku não encontrado');
   }
 
-  async searchInvoice(id: string): Promise<object> {
+  async searchInvoice(id: string, userId: number): Promise<object> {
     // console.log('Searching invoice -', id);
     const response = await this.applicationService.sendBRequest(
       {
@@ -51,6 +51,7 @@ export class ApplicationFacade {
         invoiceId: id,
       },
       constants.SCRAPED_INVOICE_ENDPOINT,
+      userId,
     );
 
     const result = this.mapObject(response, constants.INVOICE_ITEM_PREFIX);
@@ -67,7 +68,7 @@ export class ApplicationFacade {
     return result;
   }
 
-  async getTempItem(id: string, itemId: string): Promise<object> {
+  async getTempItem(id: string, itemId: string, userId: number): Promise<object> {
     // console.log('Getting item -', id);
     const response = await this.applicationService.sendBRequest(
       {
@@ -76,6 +77,7 @@ export class ApplicationFacade {
         itemId: itemId,
       },
       constants.SCRAPED_INVOICE_ENDPOINT,
+      userId,
     );
 
     return this.mapObject(response, constants.TEMP_ITEM_PREFIX);
@@ -87,6 +89,7 @@ export class ApplicationFacade {
     tempInvoiceId: string,
     newPrice: string,
     tempItem: object,
+    userId: number,
   ): Promise<object> {
     tempItem['base_comissao'] = newPrice;
     tempItem['valorUnitario'] = newPrice;
@@ -107,18 +110,19 @@ export class ApplicationFacade {
         tempItem: tempItem,
       },
       constants.SCRAPED_INVOICE_ENDPOINT,
+      userId,
     );
 
     return this.mapObject(response, constants.SENT_TEMP_ITEM_PREFIX);
   }
 
-  async addInvoice(id: string, invoice: AddInvoiceDto): Promise<object> {
+  async addInvoice(id: string, invoice: AddInvoiceDto, userId: number): Promise<object> {
     // console.log('Adding temp item -', id);
 
     // Calculate taxes with error handling
     let taxes;
     try {
-      taxes = await this.calcTax(id, invoice.idNotaTmp);
+      taxes = await this.calcTax(id, invoice.idNotaTmp, userId);
       if (!taxes) {
         throw new Error('Tax calculation returned null or undefined');
       }
@@ -171,6 +175,7 @@ export class ApplicationFacade {
           invoice: invoice,
         },
         constants.SCRAPED_INVOICE_ENDPOINT,
+        userId,
       );
 
       const result = this.mapObject(response, constants.ADD_INVOICE_FUNC);
@@ -223,19 +228,19 @@ export class ApplicationFacade {
         'O nome de usuário e a senha não correspondem',
       );
 
-    return await this.getTinyCookie(keys['tinyLogin'], keys['tinyPassword']);
+    return await this.getTinyCookie(keys['tinyLogin'], keys['tinyPassword'], id);
   }
 
-  async getTinyCookie(login: string, password: string): Promise<object> {
-    console.log('Starting to get tiny cookie');
-    
+  async getTinyCookie(login: string, password: string, userId: number): Promise<object> {
+    console.log('Starting to get tiny cookie for user', userId);
+
     // Clear any stale cookies before starting fresh authentication
-    await this.applicationService.clearCookies();
+    await this.applicationService.clearCookies(userId);
 
     const aLogin = await this.applicationService.sendXRequest({
       login,
       password,
-    });
+    }, userId);
 
     // console.log('aLogin success');
 
@@ -247,6 +252,7 @@ export class ApplicationFacade {
       login,
       password,
       setCookieResponse,
+      userId,
     );
 
     const { tinyCookie, code } = bLogin;
@@ -261,6 +267,7 @@ export class ApplicationFacade {
         code,
       },
       constants.SCRAPED_LOGIN_ENDPOINT,
+      userId,
     );
 
     // console.log('eLogin sucess');
@@ -279,6 +286,7 @@ export class ApplicationFacade {
         idUsuario: eResponse['response']['idUsuario'],
       },
       constants.SCRAPED_LOGIN_ENDPOINT,
+      userId,
     );
 
     // console.log('passed bRequest login');
@@ -293,6 +301,7 @@ export class ApplicationFacade {
     tempInvoiceId: string,
     operationId: string,
     operationName: string,
+    userId: number,
   ): Promise<object> {
     console.log('Updating items operation -', id);
     const response = await this.applicationService.sendBRequest(
@@ -304,12 +313,13 @@ export class ApplicationFacade {
         operationName: operationName,
       },
       constants.SCRAPED_INVOICE_ENDPOINT,
+      userId,
     );
 
     return response;
   }
 
-  async calcTax(id: string, tempInvoiceId: string): Promise<object> {
+  async calcTax(id: string, tempInvoiceId: string, userId: number): Promise<object> {
     // console.log('Calculating taxes -', id);
     const response = await this.applicationService.sendBRequest(
       {
@@ -318,6 +328,7 @@ export class ApplicationFacade {
         tempInvoiceId: tempInvoiceId,
       },
       constants.SCRAPED_INVOICE_ENDPOINT,
+      userId,
     );
 
     console.log('calculate taxes response', response);

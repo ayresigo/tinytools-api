@@ -41,7 +41,7 @@ export class ApplicationController {
     @Request() req,
     @Query('id') id: string,
   ): Promise<object> {
-    return await this.applicationFacade.searchInvoice(id);
+    return await this.applicationFacade.searchInvoice(id, req.user.id);
   }
 
   @UseGuards(CookieGuard)
@@ -51,7 +51,7 @@ export class ApplicationController {
     @Query('id') id: string,
     @Query('itemId') itemId: string,
   ): Promise<object> {
-    return await this.applicationFacade.getTempItem(id, itemId);
+    return await this.applicationFacade.getTempItem(id, itemId, req.user.id);
   }
 
   @UseGuards(CookieGuard)
@@ -61,7 +61,7 @@ export class ApplicationController {
     @Query('id') id: string,
     @Query('tempInvoiceId') tempInvoiceId: string,
   ): Promise<object> {
-    return await this.applicationFacade.calcTax(id, tempInvoiceId);
+    return await this.applicationFacade.calcTax(id, tempInvoiceId, req.user.id);
   }
 
   @UseGuards(CookieGuard)
@@ -81,6 +81,7 @@ export class ApplicationController {
       tempInvoiceId,
       newPrice,
       body,
+      req.user.id,
     );
   }
 
@@ -92,7 +93,7 @@ export class ApplicationController {
     @Body() invoice: AddInvoiceDto,
     @Query('id') id: string,
   ): Promise<object> {
-    return await this.applicationFacade.addInvoice(id, invoice);
+    return await this.applicationFacade.addInvoice(id, invoice, req.user.id);
   }
 
   @UseGuards(CookieGuard)
