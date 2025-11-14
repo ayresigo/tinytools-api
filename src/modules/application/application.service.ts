@@ -57,33 +57,78 @@ export class ApplicationService {
     }
     return this.userClients.get(userId);
   }
+
+  /**
+   * Check if an error is a DNS-related error that should be retried
+   */
+  private isDnsError(error: any): boolean {
+    return (
+      error.code === 'EAI_AGAIN' ||
+      error.code === 'ENOTFOUND' ||
+      error.code === 'ETIMEDOUT' ||
+      error.cause?.code === 'EAI_AGAIN' ||
+      error.cause?.code === 'ENOTFOUND' ||
+      error.cause?.code === 'ETIMEDOUT' ||
+      error.message?.includes('getaddrinfo') ||
+      error.message?.includes('EAI_AGAIN') ||
+      error.message?.includes('ETIMEDOUT') ||
+      error.message?.includes('ENOTFOUND')
+    );
+  }
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   async sendXRequest(params: object, userId: number) {
     const { client } = this.getClientForUser(userId);
-    try {
-      // console.log('Starting to send XRequest for login');
-      const url =
-        'https://accounts.tiny.com.br/realms/tiny/protocol/openid-connect/auth?client_id=tiny-webapp&redirect_uri=https://erp.tiny.com.br/login&scope=openid&response_type=code';
-      const response = await client.get(url, {});
-      const $ = cheerio.load(response.data);
-      const form = $('#kc-content-wrapper').children().attr();
-      const dynamicUrl = form.action;
-      const setCookieResponse = response.headers['set-cookie'];
-      return { response, dynamicUrl, setCookieResponse };
-    } catch (e) {
-      // Check if it's a redirect loop error
-      if (
-        e.message?.includes('Maximum number of redirects exceeded') ||
-        e.message?.includes('redirect') ||
-        e.message?.includes('Redirect')
-      ) {
-        console.log('Redirect loop detected in sendXRequest, clearing cookies');
-        await this.clearCookies(userId);
-        throw new BadRequestException(
-          'Authentication failed: Too many redirects. Session may be invalid. Please try again.',
-        );
+    const maxRetries = 5;
+    const retryDelay = 2000;
+    const url =
+      'https://accounts.tiny.com.br/realms/tiny/protocol/openid-connect/auth?client_id=tiny-webapp&redirect_uri=https://erp.tiny.com.br/login&scope=openid&response_type=code';
+
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        // console.log('Starting to send XRequest for login');
+        const response = await client.get(url, {});
+        const $ = cheerio.load(response.data);
+        const form = $('#kc-content-wrapper').children().attr();
+        const dynamicUrl = form.action;
+        const setCookieResponse = response.headers['set-cookie'];
+        return { response, dynamicUrl, setCookieResponse };
+      } catch (e) {
+        // Check if it's a DNS error that should be retried
+        if (this.isDnsError(e) && attempt < maxRetries) {
+          const waitTime = retryDelay * attempt; // Exponential backoff
+          console.log(
+            `DNS resolution failed for accounts.tiny.com.br in sendXRequest, ` +
+            `retrying in ${waitTime}ms (attempt ${attempt}/${maxRetries})...`
+          );
+          await new Promise(resolve => setTimeout(resolve, waitTime));
+          continue;
+        }
+
+        // Check if it's a redirect loop error
+        if (
+          e.message?.includes('Maximum number of redirects exceeded') ||
+          e.message?.includes('redirect') ||
+          e.message?.includes('Redirect')
+        ) {
+          console.log('Redirect loop detected in sendXRequest, clearing cookies');
+          await this.clearCookies(userId);
+          throw new BadRequestException(
+            'Authentication failed: Too many redirects. Session may be invalid. Please try again.',
+          );
+        }
+
+        // If it's a DNS error on final attempt, provide a more helpful error message
+        if (this.isDnsError(e)) {
+          throw new BadRequestException(
+            `DNS resolution failed for accounts.tiny.com.br after ${maxRetries} attempts. ` +
+            `This may be due to network connectivity issues or DNS server problems. ` +
+            `Please check your VPS/container DNS settings. ` +
+            `Original error: ${e.message || e.cause?.message || 'Unknown error'}`
+          );
+        }
+
+        throw new BadRequestException(e.message || 'Failed to initiate login');
       }
-      throw new BadRequestException(e.message || 'Failed to initiate login');
     }
   }
 
@@ -94,53 +139,86 @@ export class ApplicationService {
     setCookieResponse: string[],
     userId: number,
   ) {
-    try {
-      // console.log('Starting to send YRequest for login');
-      const form = `username=${username}&password=${password}`;
-      const params = setCookieResponse;
+    const maxRetries = 5;
+    const retryDelay = 2000;
+    const form = `username=${username}&password=${password}`;
+    const params = setCookieResponse;
 
-      const response = await axios.post(dynamicUrl, form, {
-        headers: {
-          cookie: params.toString() + `; tinyuser=${username};`,
-          Host: 'accounts.tiny.com.br',
-          'User-Agent':
-            'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:120.0) Gecko/20100101 Firefox/120.0',
-          Accept:
-            'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
-          'Accept-Language': 'en-US,en;q=0.5',
-          'Accept-Encoding': 'gzip, deflate, br',
-          'Content-Type': 'application/x-www-form-urlencoded',
-        },
-        maxRedirects: 5, // Explicitly set redirect limit
-      });
+    // Use HTTP agents for sendYRequest since it uses regular axios (not cookie jar)
+    const yRequestClient = axios.create({
+      httpAgent: httpAgent,
+      httpsAgent: httpsAgent,
+      timeout: 60000,
+      maxRedirects: 5,
+    });
 
-      if (response.data?.retorno?.codigo_erro) {
-        console.log('response.data?.retorno?.codigo_erro');
-        throw new BadRequestException(response.data.retorno.erros[0].erro);
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        // console.log('Starting to send YRequest for login');
+        const response = await yRequestClient.post(dynamicUrl, form, {
+          headers: {
+            cookie: params.toString() + `; tinyuser=${username};`,
+            Host: 'accounts.tiny.com.br',
+            'User-Agent':
+              'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:120.0) Gecko/20100101 Firefox/120.0',
+            Accept:
+              'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
+            'Accept-Language': 'en-US,en;q=0.5',
+            'Accept-Encoding': 'gzip, deflate, br',
+            'Content-Type': 'application/x-www-form-urlencoded',
+          },
+        });
+
+        if (response.data?.retorno?.codigo_erro) {
+          console.log('response.data?.retorno?.codigo_erro');
+          throw new BadRequestException(response.data.retorno.erros[0].erro);
+        }
+
+        const responseX = new URLSearchParams(response.request?.res?.responseUrl);
+
+        // console.log('nowee', response)
+
+        return {
+          tinyCookie: await this.handleCookie(response, userId),
+          code: responseX.get('code'),
+        };
+      } catch (e) {
+        // Check if it's a DNS error that should be retried
+        if (this.isDnsError(e) && attempt < maxRetries) {
+          const waitTime = retryDelay * attempt; // Exponential backoff
+          console.log(
+            `DNS resolution failed for ${dynamicUrl} in sendYRequest, ` +
+            `retrying in ${waitTime}ms (attempt ${attempt}/${maxRetries})...`
+          );
+          await new Promise(resolve => setTimeout(resolve, waitTime));
+          continue;
+        }
+
+        // Check if it's a redirect loop error
+        if (
+          e.message?.includes('Maximum number of redirects exceeded') ||
+          e.message?.includes('redirect') ||
+          e.message?.includes('Redirect')
+        ) {
+          console.log('Redirect loop detected in sendYRequest, clearing cookies');
+          await this.clearCookies(userId);
+          throw new BadRequestException(
+            'Authentication failed: Too many redirects during login. Session may be invalid. Please try again.',
+          );
+        }
+
+        // If it's a DNS error on final attempt, provide a more helpful error message
+        if (this.isDnsError(e)) {
+          throw new BadRequestException(
+            `DNS resolution failed for ${dynamicUrl} after ${maxRetries} attempts. ` +
+            `This may be due to network connectivity issues or DNS server problems. ` +
+            `Please check your VPS/container DNS settings. ` +
+            `Original error: ${e.message || e.cause?.message || 'Unknown error'}`
+          );
+        }
+
+        throw new BadRequestException(e.message || 'Failed to authenticate');
       }
-
-      const responseX = new URLSearchParams(response.request?.res?.responseUrl);
-
-      // console.log('nowee', response)
-
-      return {
-        tinyCookie: await this.handleCookie(response, userId),
-        code: responseX.get('code'),
-      };
-    } catch (e) {
-      // Check if it's a redirect loop error
-      if (
-        e.message?.includes('Maximum number of redirects exceeded') ||
-        e.message?.includes('redirect') ||
-        e.message?.includes('Redirect')
-      ) {
-        console.log('Redirect loop detected in sendYRequest, clearing cookies');
-        await this.clearCookies(userId);
-        throw new BadRequestException(
-          'Authentication failed: Too many redirects during login. Session may be invalid. Please try again.',
-        );
-      }
-      throw new BadRequestException(e.message || 'Failed to authenticate');
     }
   }
 
@@ -248,40 +326,73 @@ export class ApplicationService {
 
   async sendBRequest(params: object, endpoint: string, userId: number) {
     const { client } = this.getClientForUser(userId);
-    try {
-      // eslint-disable-next-line @typescript-eslint/no-var-requires
-      const querystring = require('querystring');
-      const url = `${constants.SCRAPED_BASE_URL}${endpoint}`;
-      const data = this.generateBRequestData(params, endpoint);
+    const maxRetries = 5;
+    const retryDelay = 2000;
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const querystring = require('querystring');
+    const url = `${constants.SCRAPED_BASE_URL}${endpoint}`;
+    const data = this.generateBRequestData(params, endpoint);
 
-      const headers = {
-        'x-custom-request-for': 'XAJAX',
-        'User-Agent':
-          'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:121.0) Gecko/20100101 Firefox/121.0',
-      };
+    const headers = {
+      'x-custom-request-for': 'XAJAX',
+      'User-Agent':
+        'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:121.0) Gecko/20100101 Firefox/121.0',
+    };
 
-      // eslint-disable-next-line no-var
-      var response = await client.post(url, querystring.stringify(data), {
-        headers,
-        maxRedirects: 5, // Explicitly set redirect limit
-      });
+    let response: AxiosResponse;
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        response = await client.post(url, querystring.stringify(data), {
+          headers,
+          maxRedirects: 5, // Explicitly set redirect limit
+        });
 
-      // response.request
-    } catch (e) {
-      console.log('sendBRequest catch', e);
-      // Check if it's a redirect loop error
-      if (
-        e.message?.includes('Maximum number of redirects exceeded') ||
-        e.message?.includes('redirect') ||
-        e.message?.includes('Redirect')
-      ) {
-        console.log('Redirect loop detected, clearing cookies');
-        await this.clearCookies(userId);
-        throw new BadRequestException(
-          'Session expired or invalid. Please refresh authentication.',
-        );
+        // response.request
+        break; // Success, exit retry loop
+      } catch (e) {
+        console.log(`sendBRequest catch (attempt ${attempt}/${maxRetries}):`, e.message || e.cause?.message || e);
+
+        // Check if it's a DNS error that should be retried
+        if (this.isDnsError(e) && attempt < maxRetries) {
+          const waitTime = retryDelay * attempt; // Exponential backoff
+          console.log(
+            `DNS resolution failed for ${url} in sendBRequest, ` +
+            `retrying in ${waitTime}ms (attempt ${attempt}/${maxRetries})...`
+          );
+          await new Promise(resolve => setTimeout(resolve, waitTime));
+          continue;
+        }
+
+        // Check if it's a redirect loop error
+        if (
+          e.message?.includes('Maximum number of redirects exceeded') ||
+          e.message?.includes('redirect') ||
+          e.message?.includes('Redirect')
+        ) {
+          console.log('Redirect loop detected, clearing cookies');
+          await this.clearCookies(userId);
+          throw new BadRequestException(
+            'Session expired or invalid. Please refresh authentication.',
+          );
+        }
+
+        // If it's a DNS error on final attempt, provide a more helpful error message
+        if (this.isDnsError(e)) {
+          throw new BadRequestException(
+            `DNS resolution failed for ${url} after ${maxRetries} attempts. ` +
+            `This may be due to network connectivity issues or DNS server problems. ` +
+            `Please check your VPS/container DNS settings. ` +
+            `Original error: ${e.message || e.cause?.message || 'Unknown error'}`
+          );
+        }
+
+        throw new BadRequestException(e.message || e.cause?.message || 'Unknown error');
       }
-      throw new BadRequestException(e.message);
+    }
+
+    // TypeScript guard: response should always be set if we reach here (all errors throw)
+    if (!response) {
+      throw new BadRequestException('Failed to get response after retries');
     }
 
     if (
