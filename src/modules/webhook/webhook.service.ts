@@ -1,4 +1,4 @@
-import { BadRequestException, Inject, Injectable, UnauthorizedException } from '@nestjs/common';
+import { BadRequestException, Inject, Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
 import { ApplicationFacade } from '../application/application.facade';
 import { WebRepository } from '../web/web.repository';
 import { AddInvoiceDto } from '../application/models/addInvoice.dto';
@@ -101,6 +101,12 @@ export class WebhookService {
       try {
         invoice = await this.applicationFacade.searchInvoice(id, userKeys.userId);
       } catch (e) {
+        // If invoice is not found, don't try to refresh cookie - just re-throw
+        if (e instanceof NotFoundException) {
+          throw e;
+        }
+        
+        // For other errors (like auth errors), try refreshing the cookie
         const cookie = await this.applicationFacade.getTinyCookieById(
           userKeys.userId,
         );
@@ -240,8 +246,8 @@ export class WebhookService {
       };
       console.log(result);
     } catch (e) {
-      // Preserve the original error if it's already a NestJS exception (BadRequestException, UnauthorizedException, etc.)
-      if (e instanceof BadRequestException || e instanceof UnauthorizedException) {
+      // Preserve the original error if it's already a NestJS exception (BadRequestException, UnauthorizedException, NotFoundException, etc.)
+      if (e instanceof BadRequestException || e instanceof UnauthorizedException || e instanceof NotFoundException) {
         throw e;
       }
       // If it's an Error with a message about redirects, convert it to BadRequestException
