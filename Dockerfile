@@ -16,9 +16,10 @@ RUN npm i \
 FROM node:20-alpine
 
 # Install DNS tools for debugging (optional but helpful)
+# Install su-exec for switching users securely
 USER root
 RUN apk update && \
-    apk add --no-cache bind-tools iputils && \
+    apk add --no-cache bind-tools iputils su-exec && \
     rm -rf /var/cache/apk/*
 
 # Fix DNS resolution inside container (safe - only affects this container)
@@ -31,12 +32,14 @@ ENV NODE_ENV production
 # Force IPv4 first for Node DNS resolution
 ENV NODE_OPTIONS="--dns-result-order=ipv4first"
 
-USER node
 WORKDIR /home/node
 
 EXPOSE 3000
 
 COPY --from=builder --chown=node:node /home/node/ ./
+COPY --chown=root:root docker-entrypoint.sh /usr/local/bin/
+RUN chmod +x /usr/local/bin/docker-entrypoint.sh
 
-# Set the command to run the application with DNS override
-CMD ["sh", "-c", "cat /tmp/resolv.conf.custom > /etc/resolv.conf 2>/dev/null || true && npm run start:production"]
+# Use entrypoint script to configure DNS as root, then switch to node user
+ENTRYPOINT ["docker-entrypoint.sh"]
+CMD ["npm", "run", "start:production"]
