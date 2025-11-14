@@ -4,7 +4,6 @@ import { WebRepository } from '../web/web.repository';
 import { AddInvoiceDto } from '../application/models/addInvoice.dto';
 import { UserKeysDto } from './models/userKeys.dto';
 import { WebService } from '../web/web.service';
-import { CookieJar } from 'tough-cookie';
 
 @Injectable()
 export class WebhookService {
@@ -100,13 +99,13 @@ export class WebhookService {
       let invoice;
 
       try {
-        invoice = await this.applicationFacade.searchInvoice(id);
+        invoice = await this.applicationFacade.searchInvoice(id, userKeys.userId);
       } catch (e) {
         const cookie = await this.applicationFacade.getTinyCookieById(
           userKeys.userId,
         );
 
-        invoice = await this.applicationFacade.searchInvoice(id);
+        invoice = await this.applicationFacade.searchInvoice(id, userKeys.userId);
         console.log(e);
       }
 
@@ -126,51 +125,57 @@ export class WebhookService {
           const tempItem = await this.applicationFacade.getTempItem(
             id,
             item.id,
+            userKeys.userId,
           );
 
           // console.log(tempItem);
 
           if (store === 'mercado' && reference.mercadoActive) {
-            const x = await this.applicationFacade.addTempItem(
+            await this.applicationFacade.addTempItem(
               id,
               item.id,
               invoice['idNotaTmp'],
               reference.mercadoPrice,
               tempItem,
+              userKeys.userId,
             );
           } else if (store === 'shopee' && reference.shopeeActive) {
-            const x = await this.applicationFacade.addTempItem(
+            await this.applicationFacade.addTempItem(
               id,
               item.id,
               invoice['idNotaTmp'],
               reference.shopeePrice,
               tempItem,
+              userKeys.userId,
             );
 
             console.log('caiu no shopee');
           } else if (store === 'aliexpress' && reference.aliActive) {
-            const x = await this.applicationFacade.addTempItem(
+            await this.applicationFacade.addTempItem(
               id,
               item.id,
               invoice['idNotaTmp'],
               reference.aliPrice,
               tempItem,
+              userKeys.userId,
             );
           } else if (store === 'shein' && reference.sheinActive) {
-            const x = await this.applicationFacade.addTempItem(
+            await this.applicationFacade.addTempItem(
               id,
               item.id,
               invoice['idNotaTmp'],
               reference.sheinPrice,
               tempItem,
+              userKeys.userId,
             );
           } else if (store === 'tiktok' && reference.tiktokActive) {
-            const x = await this.applicationFacade.addTempItem(
+            await this.applicationFacade.addTempItem(
               id,
               item.id,
               invoice['idNotaTmp'],
               reference.tiktokPrice,
               tempItem,
+              userKeys.userId,
             );
           }
 
@@ -188,6 +193,7 @@ export class WebhookService {
             invoice['idNotaTmp'],
             invoice['idTipoNota'],
             invoice['natureza'],
+            userKeys.userId,
           );
 
         console.log(updateItemsOperation, '<= updateItemsOperation');
@@ -204,11 +210,11 @@ export class WebhookService {
           percentualICMSPartilhaDestino: invoice.percentualICMSPartilhaDestino,
         });
 
-        await this.applicationFacade.addInvoice(id, new AddInvoiceDto(invoice, crt));
+        await this.applicationFacade.addInvoice(id, new AddInvoiceDto(invoice, crt), userKeys.userId);
 
-        invoice = await this.applicationFacade.searchInvoice(id);
+        invoice = await this.applicationFacade.searchInvoice(id, userKeys.userId);
 
-        await this.applicationFacade.addInvoice(id, new AddInvoiceDto(invoice, crt));
+        await this.applicationFacade.addInvoice(id, new AddInvoiceDto(invoice, crt), userKeys.userId);
 
         // console.log(new AddInvoiceDto(invoice, crt), 'invoice invoice invoice');
 
