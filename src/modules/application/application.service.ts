@@ -39,7 +39,17 @@ export class ApplicationService {
       console.log(`Creating new cookie jar for user ${userId}`);
       const jar = new CookieJar();
 
-      // Create custom agents for this user with IPv4 forcing
+      // Create axios instance WITHOUT agents first (required by axios-cookiejar-support)
+      const axiosInstance = axios.create({
+        jar,
+        maxRedirects: 5,
+        timeout: 30000,
+      });
+
+      // Wrap with cookie support
+      const client = wrapper(axiosInstance);
+
+      // AFTER wrapping, set the custom agents with IPv4 forcing
       const userHttpAgent = new http.Agent({
         family: 4, // Force IPv4
         keepAlive: true,
@@ -54,15 +64,10 @@ export class ApplicationService {
         timeout: 30000,
       });
 
-      const client = wrapper(
-        axios.create({
-          jar,
-          maxRedirects: 5,
-          timeout: 30000,
-          httpAgent: userHttpAgent,
-          httpsAgent: userHttpsAgent,
-        }),
-      );
+      // Set defaults after wrapping
+      client.defaults.httpAgent = userHttpAgent;
+      client.defaults.httpsAgent = userHttpsAgent;
+
       this.userClients.set(userId, { jar, client });
     }
     return this.userClients.get(userId);
