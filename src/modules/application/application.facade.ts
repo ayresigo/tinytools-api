@@ -11,6 +11,10 @@ import { WebRepository } from '../web/web.repository';
 
 @Injectable()
 export class ApplicationFacade {
+  // Track ongoing authentications per user to prevent race conditions
+  // Key: userId, Value: Promise that resolves when authentication completes
+  private authPromises: Map<number, Promise<object>> = new Map();
+
   constructor(
     private readonly applicationService: ApplicationService,
     private readonly webRepository: WebRepository,
@@ -54,16 +58,39 @@ export class ApplicationFacade {
       userId,
     );
 
+    // Check for authentication errors first (before parsing)
+    if (response.response && response.response[0] && response.response[0].src) {
+      const responseSrc = response.response[0].src;
+      if (
+        responseSrc.includes('Sua sessão expirou') ||
+        responseSrc.includes(constants.AUTH_ERROR_PREFIX) ||
+        responseSrc.includes('sessão') ||
+        responseSrc.includes('login') ||
+        responseSrc.includes('autenticação')
+      ) {
+        throw new UnauthorizedException('invalid cookie');
+      }
+    }
+
     const result = this.mapObject(response, constants.INVOICE_ITEM_PREFIX);
 
     // console.log(response);
 
-    if (response.response[0].src.includes('Sua sessão expirou')) {
-      throw new UnauthorizedException('invalid cookie');
+    // Only throw NotFoundException if we have a message and it's not an auth error
+    if (Object.keys(result).length == 1 && result['message']) {
+      // Double-check it's not an auth error message
+      const message = result['message'].toLowerCase();
+      if (
+        !message.includes('sessão') &&
+        !message.includes('login') &&
+        !message.includes('autenticação')
+      ) {
+        throw new NotFoundException(result['message']);
+      } else {
+        // It's actually an auth error, not "not found"
+        throw new UnauthorizedException('invalid cookie');
+      }
     }
-
-    if (Object.keys(result).length == 1)
-      throw new NotFoundException(result['message']);
 
     return result;
   }
@@ -220,7 +247,13 @@ export class ApplicationFacade {
   }
 
   async getTinyCookieById(id: number): Promise<object> {
-    // console.log('Getting tinyCookieById');
+    // Check if authentication is already in progress for this user
+    if (this.authPromises.has(id)) {
+      console.log(`Authentication already in progress for user ${id}, waiting...`);
+      return await this.authPromises.get(id);
+    }
+
+    // Start new authentication
     const keys = await this.webRepository.getTinyKeysByUserId(id);
 
     if (!keys)
@@ -228,7 +261,15 @@ export class ApplicationFacade {
         'O nome de usuário e a senha não correspondem',
       );
 
-    return await this.getTinyCookie(keys['tinyLogin'], keys['tinyPassword'], id);
+    // Create authentication promise and store it
+    const authPromise = this.getTinyCookie(keys['tinyLogin'], keys['tinyPassword'], id)
+      .finally(() => {
+        // Remove from map when done (success or failure)
+        this.authPromises.delete(id);
+      });
+
+    this.authPromises.set(id, authPromise);
+    return await authPromise;
   }
 
   async getTinyCookie(login: string, password: string, userId: number): Promise<object> {

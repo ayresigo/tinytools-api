@@ -1,6 +1,6 @@
-FROM node:20-alpine as builder
+FROM node:20-alpine AS builder
 
-ENV NODE_ENV build
+ENV NODE_ENV=build
 
 USER node
 WORKDIR /home/node
@@ -17,9 +17,10 @@ FROM node:20-alpine
 
 # Install DNS tools for debugging (optional but helpful)
 # Install su-exec for switching users securely
+# Note: ping is already available via busybox, so we don't need iputils
 USER root
 RUN apk update && \
-    apk add --no-cache bind-tools iputils su-exec && \
+    apk add --no-cache bind-tools su-exec && \
     rm -rf /var/cache/apk/*
 
 # Fix DNS resolution inside container (safe - only affects this container)
@@ -27,10 +28,10 @@ RUN echo "nameserver 8.8.8.8" > /tmp/resolv.conf.custom && \
     echo "nameserver 8.8.4.4" >> /tmp/resolv.conf.custom && \
     echo "nameserver 1.1.1.1" >> /tmp/resolv.conf.custom
 
-ENV NODE_ENV production
+ENV NODE_ENV=production
 # Configure DNS at runtime (fallback if Docker DNS not configured)
 # Force IPv4 first for Node DNS resolution
-ENV NODE_OPTIONS="--dns-result-order=ipv4first"
+ENV NODE_OPTIONS=--dns-result-order=ipv4first
 
 WORKDIR /home/node
 
