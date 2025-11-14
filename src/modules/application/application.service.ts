@@ -33,40 +33,25 @@ export class ApplicationService {
   /**
    * Get or create a client for a specific user
    * Each user gets their own cookie jar to prevent authentication conflicts
+   *
+   * NOTE: We don't set custom HTTP agents here because axios-cookiejar-support
+   * doesn't support them. DNS/IPv4 resolution should be configured at the
+   * container/OS level via Coolify DNS settings.
    */
   private getClientForUser(userId: number) {
     if (!this.userClients.has(userId)) {
       console.log(`Creating new cookie jar for user ${userId}`);
       const jar = new CookieJar();
 
-      // Create axios instance WITHOUT agents first (required by axios-cookiejar-support)
-      const axiosInstance = axios.create({
-        jar,
-        maxRedirects: 5,
-        timeout: 30000,
-      });
-
-      // Wrap with cookie support
-      const client = wrapper(axiosInstance);
-
-      // AFTER wrapping, set the custom agents with IPv4 forcing
-      const userHttpAgent = new http.Agent({
-        family: 4, // Force IPv4
-        keepAlive: true,
-        keepAliveMsecs: 1000,
-        timeout: 30000,
-      });
-
-      const userHttpsAgent = new https.Agent({
-        family: 4, // Force IPv4
-        keepAlive: true,
-        keepAliveMsecs: 1000,
-        timeout: 30000,
-      });
-
-      // Set defaults after wrapping
-      client.defaults.httpAgent = userHttpAgent;
-      client.defaults.httpsAgent = userHttpsAgent;
+      // Create axios instance with cookie jar
+      // No custom agents - axios-cookiejar-support doesn't support them
+      const client = wrapper(
+        axios.create({
+          jar,
+          maxRedirects: 5,
+          timeout: 60000, // Increased timeout for slow DNS
+        }),
+      );
 
       this.userClients.set(userId, { jar, client });
     }
